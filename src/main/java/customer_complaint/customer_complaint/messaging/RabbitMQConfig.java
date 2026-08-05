@@ -6,9 +6,6 @@ import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Queue;
-
-// queues, exchange and bindings
 @Configuration
 public class RabbitMQConfig {
 
@@ -35,12 +32,16 @@ public class RabbitMQConfig {
 
     @Bean
     public Binding smsBinding(Queue smsQueue, TopicExchange complaintExchange) {
-        return BindingBuilder.bind(smsQueue).to(complaintExchange).with(SMS_ROUTING_KEY);
+        return BindingBuilder.bind(smsQueue)
+                .to(complaintExchange)
+                .with(SMS_ROUTING_KEY);
     }
 
     @Bean
     public Binding reportBinding(Queue reportQueue, TopicExchange complaintExchange) {
-        return BindingBuilder.bind(reportQueue).to(complaintExchange).with(REPORT_ROUTING_KEY);
+        return BindingBuilder.bind(reportQueue)
+                .to(complaintExchange)
+                .with(REPORT_ROUTING_KEY);
     }
 
     @Bean
