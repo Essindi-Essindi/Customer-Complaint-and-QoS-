@@ -8,12 +8,16 @@ import customer_complaint.customer_complaint.model.enums.NotificationStatus;
 import customer_complaint.customer_complaint.repository.NotificationRepository;
 import customer_complaint.customer_complaint.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 // builds the sms text and queues it
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
+
+    private static final Logger log = LoggerFactory.getLogger(NotificationServiceImpl.class);
 
     private final NotificationRepository notificationRepository;
     private final SmsEventPublisher smsEventPublisher;
@@ -39,9 +43,21 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setStatus(NotificationStatus.QUEUED);
         notificationRepository.save(notification);
 
-        smsEventPublisher.publish(new SmsMessageEvent(
-                notification.getId(),
-                complaint.getSubscriber().getPhone(),
-                message));
+        // FIX: rabbitTemplate.convertAndSend() used to be called directly here, uncaught. If the
+        // broker is unreachable, this throws *after* the real business write above already
+        // committed - the complaint status change genuinely succeeded, but the client still got a
+        // 500 because a best-effort side-channel (queueing an SMS) blew up. We now log it and mark
+        // the notification FAILED instead of propagating the exception - the caller still returns
+        // 200 with the real result.
+        try {
+            smsEventPublisher.publish(new SmsMessageEvent(
+                    notification.getId(),
+                    complaint.getSubscriber().getPhone(),
+                    message));
+        } catch (Exception ex) {
+            log.warn("Could not queue SMS notification {} - broker may be unreachable", notification.getId(), ex);
+            notification.setStatus(NotificationStatus.FAILED);
+            notificationRepository.save(notification);
+        }
     }
 }

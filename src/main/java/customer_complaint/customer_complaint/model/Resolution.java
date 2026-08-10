@@ -34,4 +34,7 @@ public class Resolution {
     private LocalDateTime resolvedAt;
 
     private Integer rating;
+
+    @Column(name = "rating_comment", columnDefinition = "TEXT")
+    private String ratingComment;
 }

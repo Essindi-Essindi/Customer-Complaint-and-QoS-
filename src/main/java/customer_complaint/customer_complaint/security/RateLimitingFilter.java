@@ -15,10 +15,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
 
-    private static final int MAX_REQUESTS_PER_MINUTE = 20;
+    private static final int MAX_REQUESTS_PER_WINDOW = 20;
+    private static final long WINDOW_MILLIS = 60_000; // 1 minute
 
-    private final ConcurrentHashMap<String, AtomicInteger> requestCounts =
-            new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Window> requestWindows = new ConcurrentHashMap<>();
+
+    private static final class Window {
+        volatile long windowStart;
+        final AtomicInteger count = new AtomicInteger(0);
+
+        Window(long windowStart) {
+            this.windowStart = windowStart;
+        }
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -29,13 +38,20 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         if (request.getRequestURI().startsWith("/api/complaints")) {
 
             String ip = request.getRemoteAddr();
+            long now = System.currentTimeMillis();
 
-            AtomicInteger count =
-                    requestCounts.computeIfAbsent(ip,
-                            k -> new AtomicInteger(0));
+            Window window = requestWindows.computeIfAbsent(ip, k -> new Window(now));
 
-            if (count.incrementAndGet() > MAX_REQUESTS_PER_MINUTE) {
+            boolean limited;
+            synchronized (window) {
+                if (now - window.windowStart >= WINDOW_MILLIS) {
+                    window.windowStart = now;
+                    window.count.set(0);
+                }
+                limited = window.count.incrementAndGet() > MAX_REQUESTS_PER_WINDOW;
+            }
 
+            if (limited) {
                 response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
                 response.getWriter().write("Too many requests, slow down");
                 return;

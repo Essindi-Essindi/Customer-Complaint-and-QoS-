@@ -3,6 +3,7 @@ package customer_complaint.customer_complaint.service.impl;
 import customer_complaint.customer_complaint.dto.request.LoginRequest;
 import customer_complaint.customer_complaint.dto.request.RegisterSubscriberRequest;
 import customer_complaint.customer_complaint.dto.response.AuthResponse;
+import customer_complaint.customer_complaint.exception.AccountDisabledException;
 import customer_complaint.customer_complaint.exception.DuplicateUserException;
 import customer_complaint.customer_complaint.exception.InvalidCredentialsException;
 import customer_complaint.customer_complaint.model.Subscriber;
@@ -50,6 +51,13 @@ public class AuthServiceImpl implements AuthService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new InvalidCredentialsException("Invalid email or password");
+        }
+
+        // FIX: a deactivated user (see UserManagementController's DELETE /api/manager/users/{id})
+        // was previously able to log in and get a brand-new valid token, because nothing checked
+        // isActive() here. This was the main way "deactivation" failed to actually revoke access.
+        if (!user.isActive()) {
+            throw new AccountDisabledException("This account has been deactivated. Contact your administrator.");
         }
 
         String role = user.getClass().getSimpleName().toUpperCase();

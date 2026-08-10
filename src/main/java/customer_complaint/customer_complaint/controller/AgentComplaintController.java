@@ -28,9 +28,18 @@ public class AgentComplaintController {
         return ResponseEntity.ok(complaintService.listForAgent(principal.getUser().getId()));
     }
 
+    // Restricted to AGENT only (not MANAGER) because the service layer casts the caller to Agent.
+    @PreAuthorize("hasRole('AGENT')")
+    @PatchMapping("/{complaintId}/claim")
+    public ResponseEntity<ComplaintResponse> claim(@PathVariable Long complaintId,
+                                                   @AuthenticationPrincipal CustomUserDetails principal) {
+        return ResponseEntity.ok(complaintService.claim(complaintId, principal.getUser().getId()));
+    }
+
     @PatchMapping("/{complaintId}/status")
     public ResponseEntity<ComplaintResponse> updateStatus(@PathVariable Long complaintId,
-                                                            @Valid @RequestBody ComplaintStatusUpdateRequest request) {
-        return ResponseEntity.ok(complaintService.updateStatus(complaintId, request));
+                                                          @AuthenticationPrincipal CustomUserDetails principal,
+                                                          @Valid @RequestBody ComplaintStatusUpdateRequest request) {
+        return ResponseEntity.ok(complaintService.updateStatus(principal.getUser(), complaintId, request));
     }
 }

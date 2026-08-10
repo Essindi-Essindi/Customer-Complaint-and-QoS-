@@ -2,6 +2,8 @@ package customer_complaint.customer_complaint.controller;
 
 import customer_complaint.customer_complaint.dto.request.ReportGenerationRequest;
 import customer_complaint.customer_complaint.dto.response.ReportResponse;
+import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
+import customer_complaint.customer_complaint.model.Report;
 import customer_complaint.customer_complaint.security.CustomUserDetails;
 import customer_complaint.customer_complaint.service.ReportService;
 import jakarta.validation.Valid;
@@ -24,13 +26,19 @@ public class ReportController {
 
     @PostMapping
     public ResponseEntity<ReportResponse> generate(@AuthenticationPrincipal CustomUserDetails principal,
-                                                     @Valid @RequestBody ReportGenerationRequest request) {
+                                                   @Valid @RequestBody ReportGenerationRequest request) {
         return ResponseEntity.ok(reportService.requestGeneration(principal.getUser().getId(), request));
     }
 
     @GetMapping("/{reportId}/download")
     public ResponseEntity<Resource> download(@PathVariable Long reportId) {
-        Resource resource = new FileSystemResource("/reports/report-" + reportId + ".pdf");
+        Report report = reportService.getReportForDownload(reportId);
+
+        Resource resource = new FileSystemResource(report.getFilePath());
+        if (!resource.exists() || !resource.isReadable()) {
+            throw new ResourceNotFoundException("Report file is missing on disk");
+        }
+
         return ResponseEntity.ok()
                 .header("Content-Disposition", "attachment; filename=report-" + reportId + ".pdf")
                 .body(resource);

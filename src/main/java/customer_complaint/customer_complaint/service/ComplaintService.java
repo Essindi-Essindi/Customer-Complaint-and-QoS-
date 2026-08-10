@@ -5,6 +5,7 @@ import customer_complaint.customer_complaint.dto.request.ComplaintSubmissionRequ
 import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.model.User;
 
 import java.util.List;
 
@@ -19,7 +20,9 @@ public interface ComplaintService {
 
     ComplaintResponse track(String ticketNumber);
 
-    ComplaintResponse updateStatus(Long complaintId, ComplaintStatusUpdateRequest request);
+    ComplaintResponse updateStatus(User actor, Long complaintId, ComplaintStatusUpdateRequest request);
+
+    ComplaintResponse claim(Long complaintId, Long agentId);
 
     void rate(Long complaintId, RatingRequest request);
 }

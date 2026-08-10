@@ -6,9 +6,11 @@ import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
 import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
+import customer_complaint.customer_complaint.model.Agent;
 import customer_complaint.customer_complaint.model.Category;
 import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Subscriber;
+import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.model.enums.ComplaintStatus;
 import customer_complaint.customer_complaint.model.enums.ServiceType;
 import customer_complaint.customer_complaint.repository.CategoryRepository;
@@ -19,6 +21,7 @@ import customer_complaint.customer_complaint.service.NotificationService;
 import customer_complaint.customer_complaint.service.ResolutionService;
 import customer_complaint.customer_complaint.service.TicketService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -38,7 +41,6 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public ComplaintResponse submit(Long subscriberId, ComplaintSubmissionRequest request) {
-        // Idempotency check before anything is persisted
         Complaint existing = complaintRepository.findByIdempotencyKey(request.getIdempotencyKey()).orElse(null);
         if (existing != null) {
             return toResponse(existing);
@@ -51,7 +53,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setIdempotencyKey(request.getIdempotencyKey());
         complaint.setSubscriber(subscriber);
         complaint.setType(request.getType());
-        complaint.setServiceType(ServiceType.valueOf(request.getServiceType().toUpperCase()));
+        complaint.setServiceType(parseServiceType(request.getServiceType()));
         complaint.setRegion(request.getRegion());
         complaint.setCity(request.getCity());
         complaint.setDescription(request.getDescription());
@@ -94,11 +96,19 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public ComplaintResponse updateStatus(Long complaintId, ComplaintStatusUpdateRequest request) {
+    public ComplaintResponse updateStatus(User actor, Long complaintId, ComplaintStatusUpdateRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
 
-        ComplaintStatus newStatus = ComplaintStatus.valueOf(request.getNewStatus().toUpperCase());
+        if (actor instanceof Agent) {
+            boolean assignedToThisAgent = complaint.getAgent() != null
+                    && complaint.getAgent().getId().equals(actor.getId());
+            if (!assignedToThisAgent) {
+                throw new AccessDeniedException("You can only update complaints assigned to you");
+            }
+        }
+
+        ComplaintStatus newStatus = parseStatus(request.getNewStatus());
         complaint.setStatus(newStatus);
         complaint.setUpdatedAt(LocalDateTime.now());
         complaintRepository.save(complaint);
@@ -112,10 +122,55 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
-    public void rate(Long complaintId, RatingRequest request) {
-        complaintRepository.findById(complaintId)
+    public ComplaintResponse claim(Long complaintId, Long agentId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
-        // Rating is stored against the resolution, handled by ResolutionService
+
+        if (complaint.getAgent() != null) {
+            throw new IllegalStateException("This complaint is already assigned to an agent");
+        }
+
+        Agent agent = (Agent) userRepository.findById(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+
+        complaint.setAgent(agent);
+        if (complaint.getStatus() == ComplaintStatus.SUBMITTED) {
+            complaint.setStatus(ComplaintStatus.ASSIGNED);
+        }
+        complaint.setUpdatedAt(LocalDateTime.now());
+        complaintRepository.save(complaint);
+
+        return toResponse(complaint);
+    }
+
+    @Override
+    public void rate(Long complaintId, RatingRequest request) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
+
+        if (complaint.getStatus() != ComplaintStatus.RESOLVED) {
+            throw new IllegalStateException("Only resolved complaints can be rated");
+        }
+
+        resolutionService.rate(complaintId, request.getScore(), request.getComment());
+    }
+
+    private ServiceType parseServiceType(String raw) {
+        try {
+            return ServiceType.valueOf(raw.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    "Invalid serviceType '" + raw + "'. Valid values: " + java.util.Arrays.toString(ServiceType.values()));
+        }
+    }
+
+    private ComplaintStatus parseStatus(String raw) {
+        try {
+            return ComplaintStatus.valueOf(raw.toUpperCase());
+        } catch (IllegalArgumentException ex) {
+            throw new IllegalArgumentException(
+                    "Invalid status '" + raw + "'. Valid values: " + java.util.Arrays.toString(ComplaintStatus.values()));
+        }
     }
 
     private ComplaintResponse toResponse(Complaint c) {

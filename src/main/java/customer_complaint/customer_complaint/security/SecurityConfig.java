@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
@@ -31,18 +32,6 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Both JwtAuthenticationFilter and RateLimitingFilter are @Component beans that extend
-    // OncePerRequestFilter, so Spring Boot would otherwise ALSO auto-register them as generic
-    // servlet filters applied to every request, outside/before the Spring Security chain built
-    // below. That extra, uncontrolled run happens before Spring Security's own
-    // SecurityContextHolderFilter, which (because of STATELESS session policy) always starts the
-    // chain with a fresh, empty security context — wiping out whatever the stray filter set.
-    // Then, when the *real*, correctly-positioned filter instance runs inside the chain,
-    // OncePerRequestFilter's "already filtered" guard makes it skip itself, since it thinks it
-    // already ran for this request. Net result: JWTs are parsed but authentication never sticks,
-    // and every protected endpoint sees the caller as anonymous -> 403 Forbidden even with a
-    // valid token. Disabling Boot's auto-registration here ensures each filter runs exactly once,
-    // in the position we explicitly configure in securityFilterChain() below.
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(
             JwtAuthenticationFilter filter) {
@@ -99,6 +88,15 @@ public class SecurityConfig {
                                 "/v3/api-docs/**",
                                 "/actuator/health"
                         ).permitAll()
+
+                        // FIX: ComplaintController.track() was written with no @PreAuthorize,
+                        // clearly meant to let a customer check a ticket's status without being
+                        // logged in. But method-level @PreAuthorize only ever *restricts* access -
+                        // it never overrides the URL-level rule below. Since this path wasn't in
+                        // the permitAll list, .anyRequest().authenticated() silently required a
+                        // valid Bearer token here too. This makes it genuinely public.
+                        .requestMatchers(HttpMethod.GET, "/api/complaints/track/**")
+                        .permitAll()
 
                         .requestMatchers("/api/agent/**")
                         .hasAnyRole("AGENT", "MANAGER")
