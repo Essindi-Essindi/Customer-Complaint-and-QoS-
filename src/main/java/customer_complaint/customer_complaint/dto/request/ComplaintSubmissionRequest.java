@@ -27,4 +27,7 @@ public class ComplaintSubmissionRequest {
     private String description;
 
     private Long categoryId;
+
+    @NotBlank
+    private String captchaToken;
 }

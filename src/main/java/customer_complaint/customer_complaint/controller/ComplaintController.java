@@ -4,6 +4,8 @@ import customer_complaint.customer_complaint.dto.request.ComplaintSubmissionRequ
 import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.exception.InvalidCaptchaException;
+import customer_complaint.customer_complaint.security.CaptchaValidationService;
 import customer_complaint.customer_complaint.security.CustomUserDetails;
 import customer_complaint.customer_complaint.service.ComplaintService;
 import jakarta.validation.Valid;
@@ -22,11 +24,15 @@ import java.util.List;
 public class ComplaintController {
 
     private final ComplaintService complaintService;
+    private final CaptchaValidationService captchaValidationService;
 
     @PostMapping
     @PreAuthorize("hasRole('SUBSCRIBER')")
     public ResponseEntity<ComplaintResponse> submit(@AuthenticationPrincipal CustomUserDetails principal,
-                                                      @Valid @RequestBody ComplaintSubmissionRequest request) {
+                                                    @Valid @RequestBody ComplaintSubmissionRequest request) {
+        if (!captchaValidationService.isValid(request.getCaptchaToken())) {
+            throw new InvalidCaptchaException("Captcha verification failed. Please try again.");
+        }
         return ResponseEntity.ok(complaintService.submit(principal.getUser().getId(), request));
     }
 

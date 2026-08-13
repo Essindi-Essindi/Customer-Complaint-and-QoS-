@@ -74,6 +74,11 @@ public class SecurityConfig {
             throws Exception {
 
         http
+                .cors(cors -> {}) // delegate to the CorsConfig WebMvcConfigurer bean;
+                // without this, Spring Security applies its
+                // authorization rules to OPTIONS preflight
+                // requests too, rejecting them before any
+                // CORS headers are attached
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->

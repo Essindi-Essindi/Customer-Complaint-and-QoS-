@@ -28,4 +28,7 @@ public class RegisterSubscriberRequest {
 
     @NotBlank
     private String serviceType;
+
+    @NotBlank
+    private String captchaToken;
 }
