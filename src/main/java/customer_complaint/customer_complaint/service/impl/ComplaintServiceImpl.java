@@ -4,6 +4,7 @@ import customer_complaint.customer_complaint.dto.request.ComplaintStatusUpdateRe
 import customer_complaint.customer_complaint.dto.request.ComplaintSubmissionRequest;
 import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
+import customer_complaint.customer_complaint.dto.response.ComplaintManagerListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
 import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
 import customer_complaint.customer_complaint.model.Agent;
@@ -15,15 +16,20 @@ import customer_complaint.customer_complaint.model.enums.ComplaintStatus;
 import customer_complaint.customer_complaint.model.enums.ServiceType;
 import customer_complaint.customer_complaint.repository.CategoryRepository;
 import customer_complaint.customer_complaint.repository.ComplaintRepository;
+import customer_complaint.customer_complaint.repository.ComplaintSpecifications;
 import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.service.ComplaintService;
 import customer_complaint.customer_complaint.service.NotificationService;
 import customer_complaint.customer_complaint.service.ResolutionService;
 import customer_complaint.customer_complaint.service.TicketService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -84,6 +90,22 @@ public class ComplaintServiceImpl implements ComplaintService {
         return complaintRepository.findByAgentId(agentId).stream()
                 .map(this::toListItem)
                 .toList();
+    }
+
+    @Override
+    public Page<ComplaintManagerListItemResponse> listForManager(
+            String type, String serviceType, String region, String status,
+            LocalDate start, LocalDate end, Pageable pageable) {
+
+        Specification<Complaint> spec = Specification.where(ComplaintSpecifications.hasType(type))
+                .and(ComplaintSpecifications.hasServiceType(serviceType != null ? parseServiceType(serviceType) : null))
+                .and(ComplaintSpecifications.hasRegion(region))
+                .and(ComplaintSpecifications.hasStatus(status != null ? parseStatus(status) : null))
+                .and(ComplaintSpecifications.createdBetween(
+                        start != null ? start.atStartOfDay() : null,
+                        end != null ? end.atTime(23, 59, 59) : null));
+
+        return complaintRepository.findAll(spec, pageable).map(this::toManagerListItem);
     }
 
     @Override
@@ -182,5 +204,19 @@ public class ComplaintServiceImpl implements ComplaintService {
     private ComplaintListItemResponse toListItem(Complaint c) {
         return new ComplaintListItemResponse(c.getId(), c.getTicketNumber(), c.getType(),
                 c.getStatus().name(), c.getRegion(), c.getCreatedAt());
+    }
+
+    private ComplaintManagerListItemResponse toManagerListItem(Complaint c) {
+        return new ComplaintManagerListItemResponse(
+                c.getId(),
+                c.getTicketNumber(),
+                c.getSubscriber() != null ? c.getSubscriber().getName() : null,
+                c.getType(),
+                c.getServiceType().name(),
+                c.getRegion(),
+                c.getCity(),
+                c.getStatus().name(),
+                c.getCreatedAt(),
+                c.getAgent() != null ? c.getAgent().getName() : null);
     }
 }
