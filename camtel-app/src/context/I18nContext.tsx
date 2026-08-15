@@ -317,6 +317,12 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
     en: 'Delete this category? Complaints linked to it will be unaffected.',
     fr: 'Supprimer cette catégorie ? Les plaintes qui y sont liées ne seront pas affectées.',
   },
+
+  // PWA install / update
+  'pwa.offlineReady': { en: 'CAMTEL is ready to work offline', fr: 'CAMTEL est prêt à fonctionner hors ligne' },
+  'pwa.updateAvailable': { en: 'A new version is available', fr: 'Une nouvelle version est disponible' },
+  'pwa.reload': { en: 'Reload', fr: 'Recharger' },
+  'pwa.dismiss': { en: 'Later', fr: 'Plus tard' },
 };
 
 interface I18nContextType {
