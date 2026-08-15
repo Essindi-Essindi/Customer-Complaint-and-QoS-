@@ -323,6 +323,17 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'pwa.updateAvailable': { en: 'A new version is available', fr: 'Une nouvelle version est disponible' },
   'pwa.reload': { en: 'Reload', fr: 'Recharger' },
   'pwa.dismiss': { en: 'Later', fr: 'Plus tard' },
+  'pwa.installTitle': { en: 'Install the CAMTEL app', fr: 'Installer l’application CAMTEL' },
+  'pwa.installBody': {
+    en: 'Install CAMTEL on this device for quick access and a full-screen, app-like experience — no browser bar, launches right from your home screen.',
+    fr: 'Installez CAMTEL sur cet appareil pour un accès rapide et une expérience plein écran, comme une application — sans barre de navigateur, lancement direct depuis votre écran d’accueil.',
+  },
+  'pwa.installIosBody': {
+    en: 'To install: tap the Share icon in Safari, then "Add to Home Screen".',
+    fr: 'Pour installer : appuyez sur l’icône Partager dans Safari, puis « Sur l’écran d’accueil ».',
+  },
+  'pwa.install': { en: 'Install', fr: 'Installer' },
+  'pwa.installCta': { en: 'Install app', fr: 'Installer l’appli' },
 };
 
 interface I18nContextType {

@@ -538,6 +538,40 @@ a:hover {
   gap: 8px;
 }
 
+/* Bottom-left, deliberately opposite the toast/update-banner corner
+   (bottom-right) so the two never overlap. */
+.pwa-install-fab {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 9998;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 10px 12px;
+  background: var(--card-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-lift);
+  animation: pop-in 0.35s var(--ease) both;
+  transition: transform 0.2s var(--ease), box-shadow 0.2s var(--ease);
+}
+.pwa-install-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lift), 0 0 24px -8px rgba(34, 211, 238, 0.5);
+}
+.pwa-install-fab-icon {
+  display: flex;
+  color: var(--cyan);
+}
+
 .toast-close {
   position: absolute;
   right: 8px;

@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { PwaInstallButton } from './components/PwaInstallButton';
 import Register from './pages/Register';
 import Login from './pages/Login';
 import RoleSelect from './pages/RoleSelect';
@@ -21,6 +23,8 @@ export default function App() {
   return (
     <AuthProvider>
       <PwaUpdatePrompt />
+      <PwaInstallPrompt />
+      <PwaInstallButton />
       <BrowserRouter>
         <Routes>
           <Route path="/register" element={<Register />} />
