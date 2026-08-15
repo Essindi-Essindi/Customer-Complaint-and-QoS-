@@ -109,6 +109,13 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'register.createAccount': { en: 'Create Account', fr: 'Créer un compte' },
   'register.creating': { en: 'Creating…', fr: 'Création…' },
   'register.selectEllipsis': { en: 'Select…', fr: 'Sélectionner…' },
+  'register.contactMethod': {
+    en: 'How would you like us to contact you?',
+    fr: 'Comment souhaitez-vous être contacté(e) ?',
+  },
+  'register.contactEmailOnly': { en: 'Email only', fr: 'E-mail uniquement' },
+  'register.contactPhoneOnly': { en: 'Phone only', fr: 'Téléphone uniquement' },
+  'register.contactBoth': { en: 'Both email and phone', fr: 'E-mail et téléphone' },
 
   // Nav / sidebar
   'nav.myComplaints': { en: 'My Complaints', fr: 'Mes plaintes' },
@@ -194,7 +201,10 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'validation.passwordMismatch': { en: 'Passwords do not match', fr: 'Les mots de passe ne correspondent pas' },
 
   // Submit complaint
-  'submit.success': { en: 'Complaint submitted successfully', fr: 'Plainte soumise avec succès' },
+  'submit.success': {
+    en: "Complaint submitted successfully. You'll receive a confirmation by email or phone.",
+    fr: 'Plainte soumise avec succès. Vous recevrez une confirmation par e-mail ou par téléphone.',
+  },
   'submit.confirmedPrefix': { en: 'Complaint submitted. Your ticket number is', fr: 'Plainte soumise. Votre numéro de ticket est' },
   'submit.complaintType': { en: 'Complaint type', fr: 'Type de plainte' },
   'submit.affectedService': { en: 'Affected service', fr: 'Service concerné' },

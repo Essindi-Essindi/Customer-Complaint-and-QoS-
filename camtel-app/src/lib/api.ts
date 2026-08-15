@@ -86,17 +86,22 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 // Auth — AuthController (/api/auth)
 // ---------------------------------------------------------------------------
 
-// dto/request/LoginRequest.java
+// dto/request/LoginRequest.java — `identifier` is either the account's email
+// or phone number, since a subscriber can now register with only one of the
+// two (see RegisterSubscriberRequest below).
 export interface LoginRequest {
-  email: string;
+  identifier: string;
   password: string;
 }
 
-// dto/request/RegisterSubscriberRequest.java
+// dto/request/RegisterSubscriberRequest.java — email and phone are each
+// individually optional, but the backend's @EmailOrPhoneRequired rejects a
+// request with neither. The Register page's contact-method picker decides
+// which of the two (or both) actually gets sent.
 export interface RegisterSubscriberRequest {
   name: string;
-  email: string;
-  phone: string;
+  email?: string;
+  phone?: string;
   password: string;
   camtelAccountNumber: string;
   serviceType: string;
@@ -404,12 +409,13 @@ export interface UserUpdateRequest {
   department?: string;
 }
 
-// dto/response/UserResponse.java
+// dto/response/UserResponse.java — email/phone are nullable now that a
+// subscriber can register with just one of the two.
 export interface UserResponse {
   id: number;
   name: string;
-  email: string;
-  phone: string;
+  email: string | null;
+  phone: string | null;
   role: Role;
   active: boolean;
 }

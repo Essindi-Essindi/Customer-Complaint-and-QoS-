@@ -7,14 +7,15 @@ import { authApi, ApiError } from '../lib/api';
 import { SettingsControls } from '../components/SettingsControls';
 import { ChevronLeftIcon } from '../components/icons';
 
-// LoginRequest only has email + password (dto/request/LoginRequest.java) —
-// there is no separate "phone login" on the backend, so this form collects
-// exactly those two fields.
+// LoginRequest.identifier accepts either the account's email or phone
+// number (dto/request/LoginRequest.java) — a subscriber who registered
+// phone-only has no email to log in with, so this form collects a single
+// generic identifier field rather than assuming email.
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const { t } = useI18n();
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -22,13 +23,13 @@ export default function Login() {
   const handleSubmit = async (ev: FormEvent) => {
     ev.preventDefault();
     setError('');
-    if (!email.trim() || !password) {
+    if (!identifier.trim() || !password) {
       setError(t('common.fillAllFields'));
       return;
     }
     setLoading(true);
     try {
-      const data = await authApi.login({ email: email.trim(), password });
+      const data = await authApi.login({ identifier: identifier.trim(), password });
       if (data.role !== 'SUBSCRIBER') {
         setError(t('login.wrongPortal'));
         return;
@@ -53,12 +54,12 @@ export default function Login() {
 
         <form onSubmit={handleSubmit} noValidate>
           <div className="field">
-            <label>{t('common.email')}</label>
+            <label>{t('common.emailOrPhone')}</label>
             <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.cm"
+              type="text"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              placeholder="you@example.cm / 06XXXXXXXX"
             />
           </div>
           <div className="field">

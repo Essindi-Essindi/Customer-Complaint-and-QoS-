@@ -190,7 +190,7 @@ export default function SubmitComplaint() {
           </button>
         </form>
       </main>
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} duration={4000} />}
     </div>
   );
 }

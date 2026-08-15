@@ -18,6 +18,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhone(String phone);
 
+    // Login lookup: `identifier` may be either the account's email or its
+    // phone number, since a subscriber can now register with only one of
+    // the two. SQL equality against a NULL column never matches, so this
+    // can't accidentally match every phone-less/email-less account at once.
+    @Query("SELECT u FROM User u WHERE :identifier = u.email OR :identifier = u.phone")
+    Optional<User> findByEmailOrPhone(@Param("identifier") String identifier);
+
     // All active agents assigned to a particular service
     @Query("SELECT a FROM Agent a WHERE a.assignedService = :service AND a.active = true")
     List<Agent> findActiveAgentsByService(@Param("service") String service);

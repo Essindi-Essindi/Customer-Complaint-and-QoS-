@@ -141,7 +141,7 @@ export default function ManagerUsers() {
     setEditing(u);
     setEditForm({
       name: u.name,
-      phone: u.phone,
+      phone: u.phone ?? '',
       active: u.active,
       assignedRegion: '',
       assignedService: '',
@@ -387,7 +387,7 @@ export default function ManagerUsers() {
           </div>
           <div className="field">
             <label>{t('common.emailShort')}</label>
-            <input value={editing.email} disabled />
+            <input value={editing.email ?? ''} disabled />
             <span className="hint-inline">{t('users.emailNotEditable')}</span>
           </div>
           <div className="field">

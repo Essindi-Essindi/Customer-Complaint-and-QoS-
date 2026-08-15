@@ -35,11 +35,25 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private void queueSms(Complaint complaint, String message) {
+        String phone = complaint.getSubscriber().getPhone();
+
         Notification notification = new Notification();
         notification.setRecipient(complaint.getSubscriber());
         notification.setComplaint(complaint);
         notification.setMessage(message);
         notification.setType("SMS");
+
+        // A subscriber can now register with email only and no phone at
+        // all, so there may be nowhere to SMS. Record why rather than
+        // queuing a doomed send to a null recipient.
+        if (phone == null || phone.isBlank()) {
+            notification.setStatus(NotificationStatus.FAILED);
+            notificationRepository.save(notification);
+            log.info("Subscriber {} has no phone on file — skipping SMS for complaint {}",
+                    complaint.getSubscriber().getId(), complaint.getTicketNumber());
+            return;
+        }
+
         notification.setStatus(NotificationStatus.QUEUED);
         notificationRepository.save(notification);
 
@@ -50,10 +64,7 @@ public class NotificationServiceImpl implements NotificationService {
         // the notification FAILED instead of propagating the exception - the caller still returns
         // 200 with the real result.
         try {
-            smsEventPublisher.publish(new SmsMessageEvent(
-                    notification.getId(),
-                    complaint.getSubscriber().getPhone(),
-                    message));
+            smsEventPublisher.publish(new SmsMessageEvent(notification.getId(), phone, message));
         } catch (Exception ex) {
             log.warn("Could not queue SMS notification {} - broker may be unreachable", notification.getId(), ex);
             notification.setStatus(NotificationStatus.FAILED);

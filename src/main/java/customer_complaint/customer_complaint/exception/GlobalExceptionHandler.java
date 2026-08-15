@@ -4,6 +4,7 @@ import customer_complaint.customer_complaint.dto.response.ErrorResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -58,8 +59,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        String message = ex.getBindingResult().getFieldErrors().stream()
-                .map(e -> e.getField() + ": " + e.getDefaultMessage())
+        // getFieldErrors() alone misses class-level constraints (e.g.
+        // @EmailOrPhoneRequired on RegisterSubscriberRequest) — those land in
+        // getAllErrors() as plain ObjectErrors with no field to report, so
+        // they need their own branch here or their message silently
+        // disappears behind the generic "Validation failed" fallback.
+        String message = ex.getBindingResult().getAllErrors().stream()
+                .map(e -> e instanceof FieldError fe ? fe.getField() + ": " + fe.getDefaultMessage() : e.getDefaultMessage())
                 .collect(Collectors.joining(", "));
         if (message.isBlank()) {
             message = "Validation failed";

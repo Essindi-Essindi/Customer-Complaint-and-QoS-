@@ -25,10 +25,17 @@ public abstract class User {
     @Column(nullable = false, length = 100)
     private String name;
 
-    @Column(nullable = false, length = 150, unique = true)
+    // Nullable as of the email-or-phone signup change: a subscriber can
+    // register with just a phone number, so this can't be required at the
+    // column level anymore. Still unique — both MySQL and Postgres treat
+    // multiple NULLs as distinct, so any number of accounts can have no
+    // email without colliding. Agents/managers always populate this
+    // (UserCreateRequest still requires it); only Subscriber rows can be
+    // null here. See EmailOrPhoneRequired for the "at least one" rule.
+    @Column(length = 150, unique = true)
     private String email;
 
-    @Column(length = 20)
+    @Column(length = 20, unique = true)
     private String phone;
 
     @Column(name = "password_hash", nullable = false, length = 255)

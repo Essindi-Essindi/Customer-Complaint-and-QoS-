@@ -28,31 +28,41 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterSubscriberRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
+        // @EmailOrPhoneRequired already guarantees at least one of these is
+        // non-blank by the time we get here; blank-to-null keeps whichever
+        // one wasn't chosen from being stored as "" (which would collide
+        // with every other omitted field under the column's unique index).
+        String email = blankToNull(request.getEmail());
+        String phone = blankToNull(request.getPhone());
+
+        if (email != null && userRepository.existsByEmail(email)) {
             throw new DuplicateUserException("Email already registered");
+        }
+        if (phone != null && userRepository.existsByPhone(phone)) {
+            throw new DuplicateUserException("Phone number already registered");
         }
 
         Subscriber subscriber = new Subscriber();
         subscriber.setName(request.getName());
-        subscriber.setEmail(request.getEmail());
-        subscriber.setPhone(request.getPhone());
+        subscriber.setEmail(email);
+        subscriber.setPhone(phone);
         subscriber.setPasswordHash(passwordEncoder.encode(request.getPassword()));
         subscriber.setCamtelAccountNumber(request.getCamtelAccountNumber());
         subscriber.setServiceType(request.getServiceType());
 
         userRepository.save(subscriber);
 
-        String token = jwtTokenProvider.generateToken(subscriber.getEmail(), "SUBSCRIBER");
+        String token = jwtTokenProvider.generateToken(String.valueOf(subscriber.getId()), "SUBSCRIBER");
         return new AuthResponse(token, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null);
     }
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new InvalidCredentialsException("Invalid email or password"));
+        User user = userRepository.findByEmailOrPhone(request.getIdentifier())
+                .orElseThrow(() -> new InvalidCredentialsException("Invalid credentials"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new InvalidCredentialsException("Invalid email or password");
+            throw new InvalidCredentialsException("Invalid credentials");
         }
 
         // FIX: a deactivated user was previously able to log in and get a brand-new valid token.
@@ -61,7 +71,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         String role = user.getClass().getSimpleName().toUpperCase();
-        String token = jwtTokenProvider.generateToken(user.getEmail(), role);
+        String token = jwtTokenProvider.generateToken(String.valueOf(user.getId()), role);
 
         // Expose the agent's assigned service (= their department/team) so the
         // frontend can show it on the dashboard without a separate round-trip.
@@ -73,5 +83,9 @@ public class AuthServiceImpl implements AuthService {
         }
 
         return new AuthResponse(token, role, user.getId(), user.getName(), department);
+    }
+
+    private static String blankToNull(String value) {
+        return (value == null || value.isBlank()) ? null : value;
     }
 }

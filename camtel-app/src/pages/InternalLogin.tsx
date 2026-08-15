@@ -10,7 +10,9 @@ import { ChevronLeftIcon } from '../components/icons';
 // Same /api/auth/login endpoint as the subscriber login — the backend
 // doesn't distinguish staff vs subscriber logins, it just returns whichever
 // role the account has. We reject subscriber accounts here client-side so
-// staff land on the right area.
+// staff land on the right area. Staff accounts always have an email (see
+// UserCreateRequest), so this form keeps the plain email field even though
+// the wire field is the generic `identifier`.
 export default function InternalLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -29,7 +31,7 @@ export default function InternalLogin() {
     }
     setLoading(true);
     try {
-      const data = await authApi.login({ email: email.trim(), password });
+      const data = await authApi.login({ identifier: email.trim(), password });
       if (data.role === 'SUBSCRIBER') {
         setError(t('internal.wrongPortal'));
         return;

@@ -9,11 +9,17 @@ import { SettingsControls } from '../components/SettingsControls';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 
 // Every field here maps 1:1 to dto/request/RegisterSubscriberRequest.java:
-// name, email, phone, password, camtelAccountNumber, serviceType.
+// name, email, phone, password, camtelAccountNumber, serviceType. email and
+// phone are each optional on that DTO — @EmailOrPhoneRequired only rejects
+// the request if neither is present — so contactMethod is a frontend-only
+// concept that decides which of the two field(s) to show and send.
 // There is no captcha token field on that DTO, so nothing captcha-related is
 // sent to the backend even though a placeholder widget is shown.
+type ContactMethod = 'EMAIL' | 'PHONE' | 'BOTH' | '';
+
 interface FormState {
   name: string;
+  contactMethod: ContactMethod;
   email: string;
   phone: string;
   camtelAccountNumber: string;
@@ -24,6 +30,7 @@ interface FormState {
 
 const emptyForm: FormState = {
   name: '',
+  contactMethod: '',
   email: '',
   phone: '',
   camtelAccountNumber: '',
@@ -45,17 +52,25 @@ export default function Register() {
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  const needsEmail = form.contactMethod === 'EMAIL' || form.contactMethod === 'BOTH';
+  const needsPhone = form.contactMethod === 'PHONE' || form.contactMethod === 'BOTH';
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!captchaToken) e.captcha = t('validation.required');
     if (!form.name.trim()) e.name = t('validation.required');
-    if (!form.phone.trim()) e.phone = t('validation.required');
-    else if (!/^\d{9,12}$/.test(form.phone.replace(/\s/g, '')))
-      e.phone = t('validation.invalidPhone');
+    if (!form.contactMethod) e.contactMethod = t('validation.required');
+    if (needsPhone) {
+      if (!form.phone.trim()) e.phone = t('validation.required');
+      else if (!/^\d{9,12}$/.test(form.phone.replace(/\s/g, '')))
+        e.phone = t('validation.invalidPhone');
+    }
+    if (needsEmail) {
+      if (!form.email.trim()) e.email = t('validation.required');
+      else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('validation.invalidEmail');
+    }
     if (!form.camtelAccountNumber.trim()) e.camtelAccountNumber = t('validation.required');
     if (!form.serviceType) e.serviceType = t('validation.required');
-    if (!form.email.trim()) e.email = t('validation.required');
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) e.email = t('validation.invalidEmail');
     if (!form.password) e.password = t('validation.required');
     else if (form.password.length < 6) e.password = t('validation.minPassword');
     if (form.confirmPassword !== form.password) e.confirmPassword = t('validation.passwordMismatch');
@@ -71,8 +86,8 @@ export default function Register() {
     try {
       await authApi.register({
         name: form.name.trim(),
-        email: form.email.trim(),
-        phone: form.phone.trim(),
+        ...(needsEmail ? { email: form.email.trim() } : {}),
+        ...(needsPhone ? { phone: form.phone.trim() } : {}),
         password: form.password,
         camtelAccountNumber: form.camtelAccountNumber.trim(),
         serviceType: form.serviceType,
@@ -105,16 +120,32 @@ export default function Register() {
             {errors.name && <span className="field-error">{errors.name}</span>}
           </div>
 
-          <div className={`field ${errors.phone ? 'error' : ''}`}>
-            <label>{t('register.camtelPhone')}</label>
-            <input
-              type="text"
-              value={form.phone}
-              onChange={(e) => set('phone', e.target.value)}
-              placeholder="06XXXXXXXX"
-            />
-            {errors.phone && <span className="field-error">{errors.phone}</span>}
+          <div className={`field ${errors.contactMethod ? 'error' : ''}`}>
+            <label>{t('register.contactMethod')}</label>
+            <select
+              value={form.contactMethod}
+              onChange={(e) => set('contactMethod', e.target.value as ContactMethod)}
+            >
+              <option value="">{t('register.selectEllipsis')}</option>
+              <option value="EMAIL">{t('register.contactEmailOnly')}</option>
+              <option value="PHONE">{t('register.contactPhoneOnly')}</option>
+              <option value="BOTH">{t('register.contactBoth')}</option>
+            </select>
+            {errors.contactMethod && <span className="field-error">{errors.contactMethod}</span>}
           </div>
+
+          {needsPhone && (
+            <div className={`field ${errors.phone ? 'error' : ''}`}>
+              <label>{t('register.camtelPhone')}</label>
+              <input
+                type="text"
+                value={form.phone}
+                onChange={(e) => set('phone', e.target.value)}
+                placeholder="06XXXXXXXX"
+              />
+              {errors.phone && <span className="field-error">{errors.phone}</span>}
+            </div>
+          )}
 
           <div className={`field ${errors.camtelAccountNumber ? 'error' : ''}`}>
             <label>{t('register.camtelAccount')}</label>
@@ -144,11 +175,13 @@ export default function Register() {
             {errors.serviceType && <span className="field-error">{errors.serviceType}</span>}
           </div>
 
-          <div className={`field ${errors.email ? 'error' : ''}`}>
-            <label>{t('common.email')}</label>
-            <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
-            {errors.email && <span className="field-error">{errors.email}</span>}
-          </div>
+          {needsEmail && (
+            <div className={`field ${errors.email ? 'error' : ''}`}>
+              <label>{t('common.email')}</label>
+              <input type="email" value={form.email} onChange={(e) => set('email', e.target.value)} />
+              {errors.email && <span className="field-error">{errors.email}</span>}
+            </div>
+          )}
 
           <div className={`field ${errors.password ? 'error' : ''}`}>
             <label>{t('common.password')}</label>

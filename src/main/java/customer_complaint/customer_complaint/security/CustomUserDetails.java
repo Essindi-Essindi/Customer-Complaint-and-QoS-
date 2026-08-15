@@ -32,9 +32,13 @@ public class CustomUserDetails implements UserDetails {
         return user.getPasswordHash();
     }
 
+    // Email is no longer guaranteed (a subscriber can register phone-only),
+    // so fall back to phone, then the id, rather than ever returning null.
     @Override
     public String getUsername() {
-        return user.getEmail();
+        if (user.getEmail() != null) return user.getEmail();
+        if (user.getPhone() != null) return user.getPhone();
+        return String.valueOf(user.getId());
     }
 
     @Override

@@ -33,8 +33,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = header.substring(7);
 
             if (jwtTokenProvider.isTokenValid(token)) {
-                String email = jwtTokenProvider.getEmailFromToken(token);
-                UserDetails userDetails = userDetailsService.loadUserByUsername(email);
+                String userId = jwtTokenProvider.getSubjectFromToken(token);
+                UserDetails userDetails = userDetailsService.loadUserByUsername(userId);
 
                 // FIX: previously this authenticated the caller purely from the token's signature,
                 // never re-checking whether the account behind it is still active. That meant a
