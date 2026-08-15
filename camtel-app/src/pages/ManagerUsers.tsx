@@ -51,7 +51,9 @@ type EditForm = {
 export default function ManagerUsers() {
   const { t, lang } = useI18n();
   const [users, setUsers] = useState<UserResponse[]>([]);
-  const [roleFilter, setRoleFilter] = useState<Role | ''>('');
+  // Defaults to AGENT since that's who a manager is managing day to day;
+  // "All Roles" is still one select away.
+  const [roleFilter, setRoleFilter] = useState<Role | ''>('AGENT');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

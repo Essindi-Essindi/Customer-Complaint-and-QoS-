@@ -1,13 +1,12 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { SubscriberNav } from '../components/SubscriberNav';
-import { complaintsApi, ApiError } from '../lib/api';
-import type { ComplaintResponse } from '../lib/api';
+import { complaintsApi, subscriberCategoriesApi, ApiError } from '../lib/api';
+import type { ComplaintResponse, Category } from '../lib/api';
 import { Toast } from '../components/Toast';
 import { Recaptcha } from '../components/Recaptcha';
 import { useI18n } from '../context/I18nContext';
 import {
-  COMPLAINT_TYPES,
   REGIONS,
   SERVICE_TYPES,
   SERVICE_TYPE_LABELS,
@@ -15,23 +14,25 @@ import {
 } from '../lib/constants';
 
 // Fields map 1:1 to dto/request/ComplaintSubmissionRequest.java:
-// idempotencyKey, type, serviceType, region, city, description.
-// categoryId is left out — there's no endpoint a subscriber can call to list
-// categories (GET /api/manager/categories requires the MANAGER role), so
-// there's nothing to populate a category picker with.
+// idempotencyKey, type, serviceType, region, city, description, categoryId.
+// The complaint-type picker is populated from GET /api/categories
+// (SubscriberCategoryController), which mirrors whatever the manager has
+// configured on the Configuration page — no more hardcoded type list. `type`
+// (the free-text field the backend still requires) is derived from the
+// chosen category's name at submit time; `categoryId` carries the actual FK.
 function newIdempotencyKey() {
   return crypto.randomUUID();
 }
 
 interface FormState {
-  type: string;
+  categoryId: string;
   serviceType: ServiceTypeValue | '';
   region: string;
   city: string;
   description: string;
 }
 
-const emptyForm: FormState = { type: '', serviceType: '', region: '', city: '', description: '' };
+const emptyForm: FormState = { categoryId: '', serviceType: '', region: '', city: '', description: '' };
 
 export default function SubmitComplaint() {
   const { t, lang } = useI18n();
@@ -43,14 +44,23 @@ export default function SubmitComplaint() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [captchaToken, setCaptchaToken] = useState('');
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesError, setCategoriesError] = useState('');
   const resetRecaptchaRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    subscriberCategoriesApi
+      .list()
+      .then(setCategories)
+      .catch((err) => setCategoriesError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')));
+  }, [t]);
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
   const validate = () => {
     const e: Record<string, string> = {};
     if (!captchaToken) e.captcha = t('validation.required');
-    if (!form.type) e.type = t('validation.required');
+    if (!form.categoryId) e.categoryId = t('validation.required');
     if (!form.serviceType) e.serviceType = t('validation.required');
     if (!form.region) e.region = t('validation.required');
     if (!form.city.trim()) e.city = t('validation.required');
@@ -63,11 +73,14 @@ export default function SubmitComplaint() {
     setBanner('');
     if (!validate()) return;
 
+    const selectedCategory = categories.find((c) => String(c.id) === form.categoryId);
+
     setLoading(true);
     try {
       const res = await complaintsApi.submit({
         idempotencyKey,
-        type: form.type,
+        type: selectedCategory ? selectedCategory.name : form.categoryId,
+        categoryId: selectedCategory?.id,
         serviceType: form.serviceType as ServiceTypeValue,
         region: form.region,
         city: form.city.trim(),
@@ -104,19 +117,20 @@ export default function SubmitComplaint() {
         )}
 
         {banner && <div className="banner error">{banner}</div>}
+        {categoriesError && <div className="banner error">{categoriesError}</div>}
 
         <form onSubmit={handleSubmit} className="form-card" noValidate>
-          <div className={`field ${errors.type ? 'error' : ''}`}>
+          <div className={`field ${errors.categoryId ? 'error' : ''}`}>
             <label>{t('submit.complaintType')}</label>
-            <select value={form.type} onChange={(e) => set('type', e.target.value)}>
+            <select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)}>
               <option value="">{t('register.selectEllipsis')}</option>
-              {COMPLAINT_TYPES.map((ct) => (
-                <option key={ct} value={ct}>
-                  {ct}
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
                 </option>
               ))}
             </select>
-            {errors.type && <span className="field-error">{errors.type}</span>}
+            {errors.categoryId && <span className="field-error">{errors.categoryId}</span>}
           </div>
 
           <div className={`field ${errors.serviceType ? 'error' : ''}`}>

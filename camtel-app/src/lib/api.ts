@@ -368,6 +368,16 @@ export const categoriesApi = {
 };
 
 // ---------------------------------------------------------------------------
+// Categories (subscriber-facing read) — SubscriberCategoryController (/api/categories)
+// Powers the complaint-type picker on the submission form, so whatever the
+// manager adds/edits/deletes on the configuration page shows up there.
+// ---------------------------------------------------------------------------
+
+export const subscriberCategoriesApi = {
+  list: () => request<Category[]>('/categories'),
+};
+
+// ---------------------------------------------------------------------------
 // User management (manager only) — UserManagementController (/api/manager/users)
 // ---------------------------------------------------------------------------
 
