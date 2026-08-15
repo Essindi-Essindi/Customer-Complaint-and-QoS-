@@ -1,24 +1,35 @@
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from './SettingsControls';
+import { SERVICE_TYPE_LABELS } from '../lib/constants';
+import type { ServiceTypeValue } from '../lib/constants';
 
-// AuthResponse (dto/response/AuthResponse.java) only has token/role/userId/
-// name — no "assigned area" string — so there's nothing to show there
-// beyond the role badge.
+// Shows the logged-in user's name, role badge, their service/department, and
+// the current date-time for managers.
 export function StaffHeader() {
-  const { name, role } = useAuth();
-  const { t, lang } = useI18n();
-  const now = new Date().toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+    const { name, role, department } = useAuth();
+    const { t, lang } = useI18n();
+    const now = new Date().toLocaleString(lang === 'fr' ? 'fr-FR' : 'en-GB', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+    });
 
-  return (
-    <div className="staff-header">
-      <span className="staff-name">{name}</span>
-      <span className="role-badge">{role === 'AGENT' ? t('role.agent') : t('role.manager')}</span>
-      {role === 'MANAGER' && <span className="staff-datetime">{now}</span>}
-      <SettingsControls className="staff-header-controls" />
-    </div>
-  );
+    // For agents, department == assignedService (e.g. "MOBILE").
+    // Translate it to the human label when possible.
+    const departmentLabel =
+        role === 'AGENT' && department
+            ? (SERVICE_TYPE_LABELS[department as ServiceTypeValue]?.[lang] ?? department)
+            : department;
+
+    return (
+        <div className="staff-header">
+            <span className="staff-name">{name}</span>
+            <span className="role-badge">{role === 'AGENT' ? t('role.agent') : t('role.manager')}</span>
+            {departmentLabel && (
+                <span className="dept-badge">{departmentLabel}</span>
+            )}
+            {role === 'MANAGER' && <span className="staff-datetime">{now}</span>}
+            <SettingsControls className="staff-header-controls" />
+        </div>
+    );
 }

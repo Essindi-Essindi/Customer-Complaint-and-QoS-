@@ -3,8 +3,8 @@ import type { Role, ComplaintStatusValue, ServiceTypeValue, ReportTypeValue } fr
 // Base URL for the Spring Boot backend. Override with VITE_API_BASE_URL in a
 // .env file if the API isn't running on the default localhost:8080.
 const API_BASE_URL: string =
-  (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ||
-  'http://localhost:8080/api';
+    (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ||
+    'http://localhost:8080/api';
 
 const TOKEN_STORAGE_KEY = 'camtel_auth';
 
@@ -104,18 +104,20 @@ export interface RegisterSubscriberRequest {
 }
 
 // dto/response/AuthResponse.java
+// department: for agents = assignedService (MOBILE/ADSL/FTTH), for managers = department name
 export interface AuthResponse {
   token: string;
   role: Role;
   userId: number;
   name: string;
+  department: string | null;
 }
 
 export const authApi = {
   register: (data: RegisterSubscriberRequest) =>
-    request<AuthResponse>('/auth/register', { method: 'POST', body: data, auth: false }),
+      request<AuthResponse>('/auth/register', { method: 'POST', body: data, auth: false }),
   login: (data: LoginRequest) =>
-    request<AuthResponse>('/auth/login', { method: 'POST', body: data, auth: false }),
+      request<AuthResponse>('/auth/login', { method: 'POST', body: data, auth: false }),
 };
 
 // ---------------------------------------------------------------------------
@@ -134,9 +136,7 @@ export interface ComplaintSubmissionRequest {
   captchaToken: string;
 }
 
-// dto/response/ComplaintResponse.java — the full detail view. Note the backend
-// does NOT return resolutionNote, assigned agent name, rating, or an audit
-// trail here; those fields don't exist in this DTO.
+// dto/response/ComplaintResponse.java — the full detail view.
 export interface ComplaintResponse {
   id: number;
   ticketNumber: string;
@@ -150,12 +150,11 @@ export interface ComplaintResponse {
 }
 
 // dto/response/ComplaintListItemResponse.java — the row shown in list views.
-// Deliberately thinner than ComplaintResponse: no serviceType, city, or
-// subscriber/agent info.
 export interface ComplaintListItemResponse {
   id: number;
   ticketNumber: string;
   type: string;
+  serviceType: string; // added — needed for agent service-tab display
   status: ComplaintStatusValue;
   region: string;
   createdAt: string;
@@ -169,15 +168,15 @@ export interface RatingRequest {
 
 export const complaintsApi = {
   submit: (data: ComplaintSubmissionRequest) =>
-    request<ComplaintResponse>('/complaints', { method: 'POST', body: data }),
+      request<ComplaintResponse>('/complaints', { method: 'POST', body: data }),
   listMine: () => request<ComplaintListItemResponse[]>('/complaints/mine'),
   // Public — no auth required (see SecurityConfig permitAll for GET /api/complaints/track/**)
   track: (ticketNumber: string) =>
-    request<ComplaintResponse>(`/complaints/track/${encodeURIComponent(ticketNumber)}`, {
-      auth: false,
-    }),
+      request<ComplaintResponse>(`/complaints/track/${encodeURIComponent(ticketNumber)}`, {
+        auth: false,
+      }),
   rate: (complaintId: number, data: RatingRequest) =>
-    request<void>(`/complaints/${complaintId}/rate`, { method: 'POST', body: data }),
+      request<void>(`/complaints/${complaintId}/rate`, { method: 'POST', body: data }),
 };
 
 // ---------------------------------------------------------------------------
@@ -192,14 +191,16 @@ export interface ComplaintStatusUpdateRequest {
 
 export const agentComplaintsApi = {
   listAssigned: () => request<ComplaintListItemResponse[]>('/agent/complaints/assigned'),
+  // All complaints for the service the agent is assigned to (agent-only)
+  listServiceComplaints: () => request<ComplaintListItemResponse[]>('/agent/complaints/service'),
   // Agent-only (not manager) — the backend casts the caller to Agent.
   claim: (complaintId: number) =>
-    request<ComplaintResponse>(`/agent/complaints/${complaintId}/claim`, { method: 'PATCH' }),
+      request<ComplaintResponse>(`/agent/complaints/${complaintId}/claim`, { method: 'PATCH' }),
   updateStatus: (complaintId: number, data: ComplaintStatusUpdateRequest) =>
-    request<ComplaintResponse>(`/agent/complaints/${complaintId}/status`, {
-      method: 'PATCH',
-      body: data,
-    }),
+      request<ComplaintResponse>(`/agent/complaints/${complaintId}/status`, {
+        method: 'PATCH',
+        body: data,
+      }),
 };
 
 // ---------------------------------------------------------------------------
@@ -232,9 +233,9 @@ export interface RecurringPatternResponse {
 export const analyticsApi = {
   // start/end are required LocalDate (YYYY-MM-DD) query params; serviceType optional.
   heatMap: (start: string, end: string, serviceType?: ServiceTypeValue) =>
-    request<HeatMapResponse[]>('/analytics/heatmap', { query: { start, end, serviceType } }),
+      request<HeatMapResponse[]>('/analytics/heatmap', { query: { start, end, serviceType } }),
   kpis: (groupBy: 'type' | 'region' | 'team') =>
-    request<KpiResponse[]>('/analytics/kpis', { query: { groupBy } }),
+      request<KpiResponse[]>('/analytics/kpis', { query: { groupBy } }),
   recurringPatterns: () => request<RecurringPatternResponse[]>('/analytics/recurring-patterns'),
 };
 
@@ -261,7 +262,7 @@ export interface ReportResponse {
 
 export const reportsApi = {
   generate: (data: ReportGenerationRequest) =>
-    request<ReportResponse>('/reports', { method: 'POST', body: data }),
+      request<ReportResponse>('/reports', { method: 'POST', body: data }),
   // Binary download — needs the Authorization header attached manually since
   // this isn't a JSON request/response.
   download: async (reportId: number): Promise<Blob> => {
@@ -317,11 +318,32 @@ export interface ManagerComplaintFilters {
   size?: number;
 }
 
+// dto/response/AgentWithLoadResponse.java
+export interface AgentWithLoadResponse {
+  id: number;
+  name: string;
+  email: string;
+  assignedService: string;
+  assignedRegion: string | null;
+  assignedComplaintCount: number; // active (non-resolved) complaints count
+}
+
 export const managerComplaintsApi = {
   list: (filters: ManagerComplaintFilters = {}) =>
-    request<SpringPage<ComplaintManagerListItemResponse>>('/manager/complaints', {
-      query: { ...filters },
-    }),
+      request<SpringPage<ComplaintManagerListItemResponse>>('/manager/complaints', {
+        query: { ...filters },
+      }),
+  // POST /api/manager/complaints/{id}/assign — manager assigns or re-assigns an agent
+  assignAgent: (complaintId: number, agentId: number) =>
+      request<ComplaintResponse>(`/manager/complaints/${complaintId}/assign`, {
+        method: 'POST',
+        body: { agentId },
+      }),
+  // GET /api/manager/complaints/agents-by-service?service=MOBILE
+  agentsByService: (service: string) =>
+      request<AgentWithLoadResponse[]>('/manager/complaints/agents-by-service', {
+        query: { service },
+      }),
 };
 
 // ---------------------------------------------------------------------------
@@ -339,9 +361,9 @@ export interface Category {
 export const categoriesApi = {
   list: () => request<Category[]>('/manager/categories'),
   create: (name: string, description?: string) =>
-    request<Category>('/manager/categories', { method: 'POST', query: { name, description } }),
+      request<Category>('/manager/categories', { method: 'POST', query: { name, description } }),
   update: (id: number, name: string, description?: string) =>
-    request<Category>(`/manager/categories/${id}`, { method: 'PUT', query: { name, description } }),
+      request<Category>(`/manager/categories/${id}`, { method: 'PUT', query: { name, description } }),
   delete: (id: number) => request<void>(`/manager/categories/${id}`, { method: 'DELETE' }),
 };
 
@@ -350,8 +372,7 @@ export const categoriesApi = {
 // ---------------------------------------------------------------------------
 
 // dto/request/UserCreateRequest.java — role must be AGENT or MANAGER; the
-// backend rejects anything else (UserManagementServiceImpl only switches on
-// those two).
+// backend rejects anything else.
 export interface UserCreateRequest {
   name: string;
   email: string;
@@ -386,8 +407,8 @@ export interface UserResponse {
 export const usersApi = {
   list: (role?: Role) => request<UserResponse[]>('/manager/users', { query: { role } }),
   create: (data: UserCreateRequest) =>
-    request<UserResponse>('/manager/users', { method: 'POST', body: data }),
+      request<UserResponse>('/manager/users', { method: 'POST', body: data }),
   update: (userId: number, data: UserUpdateRequest) =>
-    request<UserResponse>(`/manager/users/${userId}`, { method: 'PUT', body: data }),
+      request<UserResponse>(`/manager/users/${userId}`, { method: 'PUT', body: data }),
   deactivate: (userId: number) => request<void>(`/manager/users/${userId}`, { method: 'DELETE' }),
 };

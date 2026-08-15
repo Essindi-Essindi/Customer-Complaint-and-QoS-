@@ -15,6 +15,7 @@ public class ComplaintListItemResponse {
     private Long id;
     private String ticketNumber;
     private String type;
+    private String serviceType; // added so agent dashboard can display service complaints tab
     private String status;
     private String region;
     private LocalDateTime createdAt;

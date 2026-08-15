@@ -93,6 +93,14 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
+    public List<ComplaintListItemResponse> listForService(String serviceType) {
+        ServiceType st = parseServiceType(serviceType);
+        return complaintRepository.findByServiceType(st).stream()
+                .map(this::toListItem)
+                .toList();
+    }
+
+    @Override
     public Page<ComplaintManagerListItemResponse> listForManager(
             String type, String serviceType, String region, String status,
             LocalDate start, LocalDate end, Pageable pageable) {
@@ -166,6 +174,25 @@ public class ComplaintServiceImpl implements ComplaintService {
     }
 
     @Override
+    public ComplaintResponse assignAgent(Long complaintId, Long agentId) {
+        Complaint complaint = complaintRepository.findById(complaintId)
+                .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
+
+        Agent agent = (Agent) userRepository.findById(agentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
+
+        complaint.setAgent(agent);
+        // Only move to ASSIGNED when the complaint hasn't progressed further
+        if (complaint.getStatus() == ComplaintStatus.SUBMITTED) {
+            complaint.setStatus(ComplaintStatus.ASSIGNED);
+        }
+        complaint.setUpdatedAt(LocalDateTime.now());
+        complaintRepository.save(complaint);
+
+        return toResponse(complaint);
+    }
+
+    @Override
     public void rate(Long complaintId, RatingRequest request) {
         Complaint complaint = complaintRepository.findById(complaintId)
                 .orElseThrow(() -> new ResourceNotFoundException("Complaint not found"));
@@ -203,7 +230,7 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private ComplaintListItemResponse toListItem(Complaint c) {
         return new ComplaintListItemResponse(c.getId(), c.getTicketNumber(), c.getType(),
-                c.getStatus().name(), c.getRegion(), c.getCreatedAt());
+                c.getServiceType().name(), c.getStatus().name(), c.getRegion(), c.getCreatedAt());
     }
 
     private ComplaintManagerListItemResponse toManagerListItem(Complaint c) {

@@ -6,6 +6,8 @@ import customer_complaint.customer_complaint.dto.response.AuthResponse;
 import customer_complaint.customer_complaint.exception.AccountDisabledException;
 import customer_complaint.customer_complaint.exception.DuplicateUserException;
 import customer_complaint.customer_complaint.exception.InvalidCredentialsException;
+import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.model.Manager;
 import customer_complaint.customer_complaint.model.Subscriber;
 import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.repository.UserRepository;
@@ -41,7 +43,7 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(subscriber);
 
         String token = jwtTokenProvider.generateToken(subscriber.getEmail(), "SUBSCRIBER");
-        return new AuthResponse(token, "SUBSCRIBER", subscriber.getId(), subscriber.getName());
+        return new AuthResponse(token, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null);
     }
 
     @Override
@@ -53,15 +55,23 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid email or password");
         }
 
-        // FIX: a deactivated user (see UserManagementController's DELETE /api/manager/users/{id})
-        // was previously able to log in and get a brand-new valid token, because nothing checked
-        // isActive() here. This was the main way "deactivation" failed to actually revoke access.
+        // FIX: a deactivated user was previously able to log in and get a brand-new valid token.
         if (!user.isActive()) {
             throw new AccountDisabledException("This account has been deactivated. Contact your administrator.");
         }
 
         String role = user.getClass().getSimpleName().toUpperCase();
         String token = jwtTokenProvider.generateToken(user.getEmail(), role);
-        return new AuthResponse(token, role, user.getId(), user.getName());
+
+        // Expose the agent's assigned service (= their department/team) so the
+        // frontend can show it on the dashboard without a separate round-trip.
+        String department = null;
+        if (user instanceof Agent agent) {
+            department = agent.getAssignedService();
+        } else if (user instanceof Manager manager) {
+            department = manager.getDepartment();
+        }
+
+        return new AuthResponse(token, role, user.getId(), user.getName(), department);
     }
 }

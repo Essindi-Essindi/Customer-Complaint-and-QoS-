@@ -3,6 +3,8 @@ package customer_complaint.customer_complaint.controller;
 import customer_complaint.customer_complaint.dto.request.ComplaintStatusUpdateRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.security.CustomUserDetails;
 import customer_complaint.customer_complaint.service.ComplaintService;
 import jakarta.validation.Valid;
@@ -26,6 +28,19 @@ public class AgentComplaintController {
     @GetMapping("/assigned")
     public ResponseEntity<List<ComplaintListItemResponse>> viewAssigned(@AuthenticationPrincipal CustomUserDetails principal) {
         return ResponseEntity.ok(complaintService.listForAgent(principal.getUser().getId()));
+    }
+
+    // All complaints for the service the logged-in agent is assigned to.
+    // Managers cannot call this (they use /api/manager/complaints instead).
+    @PreAuthorize("hasRole('AGENT')")
+    @GetMapping("/service")
+    public ResponseEntity<List<ComplaintListItemResponse>> viewServiceComplaints(
+            @AuthenticationPrincipal CustomUserDetails principal) {
+        User user = principal.getUser();
+        if (!(user instanceof Agent agent) || agent.getAssignedService() == null) {
+            return ResponseEntity.ok(List.of());
+        }
+        return ResponseEntity.ok(complaintService.listForService(agent.getAssignedService()));
     }
 
     // Restricted to AGENT only (not MANAGER) because the service layer casts the caller to Agent.

@@ -3,14 +3,14 @@ import type { ReactNode } from 'react';
 import type { Role } from '../lib/constants';
 import type { AuthResponse } from '../lib/api';
 
-// Mirrors dto/response/AuthResponse.java exactly — token, role, userId, name.
-// There is nothing else on that response (no phone, no assigned area), so we
-// don't store or fabricate anything beyond it.
+// Mirrors dto/response/AuthResponse.java exactly.
+// department: for agents = assignedService (MOBILE/ADSL/FTTH), for managers = department name.
 interface AuthState {
   token: string | null;
   role: Role | null;
   userId: number | null;
   name: string | null;
+  department: string | null; // agent's service or manager's department
 }
 
 interface AuthContextType extends AuthState {
@@ -30,7 +30,7 @@ function loadStored(): AuthState {
   } catch {
     /* ignore */
   }
-  return { token: null, role: null, userId: null, name: null };
+  return { token: null, role: null, userId: null, name: null, department: null };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -42,27 +42,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       role: data.role,
       userId: data.userId,
       name: data.name,
+      department: data.department ?? null,
     };
     setState(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
   const logout = useCallback(() => {
-    setState({ token: null, role: null, userId: null, name: null });
+    setState({ token: null, role: null, userId: null, name: null, department: null });
     localStorage.removeItem(STORAGE_KEY);
   }, []);
 
   return (
-    <AuthContext.Provider
-      value={{
-        ...state,
-        login,
-        logout,
-        isAuthenticated: !!state.token,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+      <AuthContext.Provider
+          value={{
+            ...state,
+            login,
+            logout,
+            isAuthenticated: !!state.token,
+          }}
+      >
+        {children}
+      </AuthContext.Provider>
   );
 }
 

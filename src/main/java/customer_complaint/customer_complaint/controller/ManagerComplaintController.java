@@ -1,7 +1,14 @@
 package customer_complaint.customer_complaint.controller;
 
+import customer_complaint.customer_complaint.dto.request.AssignAgentRequest;
+import customer_complaint.customer_complaint.dto.response.AgentWithLoadResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintManagerListItemResponse;
+import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.repository.ComplaintRepository;
+import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.service.ComplaintService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -10,12 +17,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
+import java.util.List;
 
 // backs the "Dashboard Overview" table: every complaint in the system,
 // filterable and paginated. Path is under /api/manager/** which
@@ -27,6 +32,8 @@ import java.time.LocalDate;
 public class ManagerComplaintController {
 
     private final ComplaintService complaintService;
+    private final UserRepository userRepository;
+    private final ComplaintRepository complaintRepository;
 
     @GetMapping
     public ResponseEntity<Page<ComplaintManagerListItemResponse>> list(
@@ -42,5 +49,31 @@ public class ManagerComplaintController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         return ResponseEntity.ok(
                 complaintService.listForManager(type, serviceType, region, status, start, end, pageable));
+    }
+
+    // POST /api/manager/complaints/{id}/assign
+    // Manager assigns (or re-assigns) an agent to a complaint.
+    @PostMapping("/{complaintId}/assign")
+    public ResponseEntity<ComplaintResponse> assign(@PathVariable Long complaintId,
+                                                    @Valid @RequestBody AssignAgentRequest request) {
+        return ResponseEntity.ok(complaintService.assignAgent(complaintId, request.getAgentId()));
+    }
+
+    // GET /api/manager/complaints/agents-by-service?service=MOBILE
+    // Returns all active agents for the given service, with their current load count.
+    // Used to populate the assignment dropdown in the manager's complaint detail modal.
+    @GetMapping("/agents-by-service")
+    public ResponseEntity<List<AgentWithLoadResponse>> agentsByService(@RequestParam String service) {
+        List<Agent> agents = userRepository.findActiveAgentsByService(service);
+        List<AgentWithLoadResponse> result = agents.stream()
+                .map(a -> new AgentWithLoadResponse(
+                        a.getId(),
+                        a.getName(),
+                        a.getEmail(),
+                        a.getAssignedService(),
+                        a.getAssignedRegion(),
+                        complaintRepository.countActiveByAgentId(a.getId())))
+                .toList();
+        return ResponseEntity.ok(result);
     }
 }

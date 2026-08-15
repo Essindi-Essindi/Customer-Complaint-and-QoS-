@@ -268,7 +268,7 @@ a:hover {
   justify-content: center;
   padding: 24px;
   background: radial-gradient(circle at 15% 10%, rgba(47, 143, 255, 0.25), transparent 55%),
-    radial-gradient(circle at 85% 90%, rgba(139, 124, 255, 0.22), transparent 55%), var(--bg-0);
+  radial-gradient(circle at 85% 90%, rgba(139, 124, 255, 0.22), transparent 55%), var(--bg-0);
 }
 
 .auth-card {
@@ -1709,4 +1709,118 @@ a:hover {
   font-weight: 400;
   color: var(--muted);
   font-size: 0.85em;
+}
+
+/* --- dept-badge: agent service / manager department in header --- */
+.dept-badge {
+  display: inline-block;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: rgba(22, 163, 74, 0.13);
+  border: 1px solid rgba(22, 163, 74, 0.35);
+  color: #16a34a;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+[data-theme='dark'] .dept-badge {
+  background: rgba(22, 163, 74, 0.22);
+  border-color: rgba(22, 163, 74, 0.5);
+  color: #4ade80;
+}
+
+/* --- agent dashboard tabs --- */
+.tab-bar {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border);
+}
+.tab-btn {
+  padding: 8px 18px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
+  border-bottom: 3px solid transparent;
+  margin-bottom: -2px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.tab-btn:hover {
+  color: var(--text);
+}
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 700;
+}
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: var(--border);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.tab-btn.active .tab-count {
+  background: rgba(47, 143, 255, 0.16);
+  color: var(--primary);
+}
+.tab-panel {
+  padding-top: 20px;
+}
+
+/* ── Agent assignment block inside manager modal ──────────────────────────── */
+.assign-block {
+  margin-top: 20px;
+  padding: 14px 16px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+.assign-block__title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.assign-block__hint {
+  font-size: 0.875rem;
+  color: var(--muted);
+  margin: 0;
+}
+.assign-block__select {
+  display: block;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* Confirm sub-panel */
+.assign-confirm {
+  margin-top: 10px;
+  padding: 12px 14px;
+  background: var(--card-strong);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+}
+.assign-confirm__text {
+  font-size: 0.9rem;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+.assign-confirm__actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
 }

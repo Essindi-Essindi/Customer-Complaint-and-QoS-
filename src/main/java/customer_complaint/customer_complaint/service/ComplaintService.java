@@ -22,8 +22,10 @@ public interface ComplaintService {
 
     List<ComplaintListItemResponse> listForAgent(Long agentId);
 
-    // manager-only: every complaint in the system, filtered and paginated -
-    // backs the "Dashboard Overview" table (GET /api/manager/complaints)
+    // All complaints for a service — shown in agent dashboard "service" tab
+    List<ComplaintListItemResponse> listForService(String serviceType);
+
+    // manager-only: every complaint in the system, filtered and paginated
     Page<ComplaintManagerListItemResponse> listForManager(
             String type, String serviceType, String region, String status,
             LocalDate start, LocalDate end, Pageable pageable);
@@ -33,6 +35,9 @@ public interface ComplaintService {
     ComplaintResponse updateStatus(User actor, Long complaintId, ComplaintStatusUpdateRequest request);
 
     ComplaintResponse claim(Long complaintId, Long agentId);
+
+    // Manager assigns (or re-assigns) an agent to a complaint
+    ComplaintResponse assignAgent(Long complaintId, Long agentId);
 
     void rate(Long complaintId, RatingRequest request);
 }
