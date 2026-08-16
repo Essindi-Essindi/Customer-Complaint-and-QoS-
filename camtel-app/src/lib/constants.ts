@@ -6,6 +6,21 @@
 // model/enums/UserRole.java
 export type Role = 'SUBSCRIBER' | 'AGENT' | 'MANAGER';
 
+// Where each role lands once authenticated — the "home" route GuestRoute
+// sends an already-logged-in user to if they land back on a login/register
+// page (browser back button, typing the URL, a stale bookmark, ...).
+export function dashboardPathForRole(role: Role): string {
+  switch (role) {
+    case 'AGENT':
+      return '/agent/complaints';
+    case 'MANAGER':
+      return '/manager/dashboard';
+    case 'SUBSCRIBER':
+    default:
+      return '/my-complaints';
+  }
+}
+
 // model/enums/ComplaintStatus.java
 export type ComplaintStatusValue = 'SUBMITTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED';
 

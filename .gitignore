@@ -31,3 +31,12 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Environment secrets ###
+# Every .env (backend and camtel-app/.env alike) holds real credentials and
+# must never be committed — each clone/branch needs its own copy, added back
+# manually from the matching .env.example. The example files themselves are
+# meant to be committed, so they're explicitly un-ignored below.
+.env
+.env.*
+!**/.env.example

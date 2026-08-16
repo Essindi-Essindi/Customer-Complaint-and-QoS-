@@ -46,4 +46,21 @@ public abstract class User {
 
     @Column(name = "is_active", nullable = false)
     private boolean active = true;
+
+    // Defaults to true so this never blocks anyone but the exact case it's
+    // for: a subscriber who self-registered with an email. AuthServiceImpl
+    // flips it false right after construction for that case only — staff
+    // accounts (manager-provisioned) and phone-only subscribers keep the
+    // default since there's nothing for either to verify.
+    // columnDefinition carries the default into the ALTER TABLE that adds
+    // this column via ddl-auto=update, so existing rows land on true
+    // instead of failing the NOT NULL constraint.
+    @Column(name = "email_verified", nullable = false, columnDefinition = "boolean default true")
+    private boolean emailVerified = true;
+
+    @Column(name = "verification_code", length = 10)
+    private String verificationCode;
+
+    @Column(name = "verification_code_expires_at")
+    private LocalDateTime verificationCodeExpiresAt;
 }

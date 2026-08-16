@@ -2,10 +2,15 @@ package customer_complaint.customer_complaint.service.impl;
 
 import customer_complaint.customer_complaint.dto.request.LoginRequest;
 import customer_complaint.customer_complaint.dto.request.RegisterSubscriberRequest;
+import customer_complaint.customer_complaint.dto.request.ResendVerificationRequest;
+import customer_complaint.customer_complaint.dto.request.VerifyEmailRequest;
 import customer_complaint.customer_complaint.dto.response.AuthResponse;
 import customer_complaint.customer_complaint.exception.AccountDisabledException;
 import customer_complaint.customer_complaint.exception.DuplicateUserException;
+import customer_complaint.customer_complaint.exception.EmailNotVerifiedException;
 import customer_complaint.customer_complaint.exception.InvalidCredentialsException;
+import customer_complaint.customer_complaint.exception.InvalidVerificationCodeException;
+import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
 import customer_complaint.customer_complaint.model.Agent;
 import customer_complaint.customer_complaint.model.Manager;
 import customer_complaint.customer_complaint.model.Subscriber;
@@ -13,18 +18,26 @@ import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.security.JwtTokenProvider;
 import customer_complaint.customer_complaint.service.AuthService;
+import customer_complaint.customer_complaint.service.EmailService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-// hashes password, issues jwt on success
+import java.security.SecureRandom;
+import java.time.LocalDateTime;
+
+// hashes password, issues jwt on success, handles email verification codes
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
 
+    private static final SecureRandom RANDOM = new SecureRandom();
+    private static final int VERIFICATION_CODE_VALID_MINUTES = 15;
+
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
+    private final EmailService emailService;
 
     @Override
     public AuthResponse register(RegisterSubscriberRequest request) {
@@ -50,10 +63,27 @@ public class AuthServiceImpl implements AuthService {
         subscriber.setCamtelAccountNumber(request.getCamtelAccountNumber());
         subscriber.setServiceType(request.getServiceType());
 
+        // Only an email registration has anything to verify — phone-only
+        // subscribers keep User's default emailVerified = true and can log
+        // in immediately, same as before this feature existed.
+        boolean needsVerification = email != null;
+        if (needsVerification) {
+            subscriber.setEmailVerified(false);
+            subscriber.setVerificationCode(generateCode());
+            subscriber.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_VALID_MINUTES));
+        }
+
         userRepository.save(subscriber);
 
+        if (needsVerification) {
+            emailService.sendVerificationCode(subscriber, subscriber.getVerificationCode());
+            // No token: an account that hasn't verified its email yet can't
+            // be handed a working session just by registering.
+            return new AuthResponse(null, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null, true);
+        }
+
         String token = jwtTokenProvider.generateToken(String.valueOf(subscriber.getId()), "SUBSCRIBER");
-        return new AuthResponse(token, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null);
+        return new AuthResponse(token, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null, false);
     }
 
     @Override
@@ -70,6 +100,11 @@ public class AuthServiceImpl implements AuthService {
             throw new AccountDisabledException("This account has been deactivated. Contact your administrator.");
         }
 
+        if (!user.isEmailVerified()) {
+            throw new EmailNotVerifiedException(
+                    "Please verify your email before logging in. Check your inbox for the verification code.");
+        }
+
         String role = user.getClass().getSimpleName().toUpperCase();
         String token = jwtTokenProvider.generateToken(String.valueOf(user.getId()), role);
 
@@ -82,10 +117,74 @@ public class AuthServiceImpl implements AuthService {
             department = manager.getDepartment();
         }
 
-        return new AuthResponse(token, role, user.getId(), user.getName(), department);
+        return new AuthResponse(token, role, user.getId(), user.getName(), department, false);
+    }
+
+    @Override
+    public AuthResponse verifyEmail(VerifyEmailRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for that email"));
+
+        if (user.isEmailVerified()) {
+            throw new InvalidVerificationCodeException("This email is already verified");
+        }
+
+        boolean codeMatches = user.getVerificationCode() != null
+                && user.getVerificationCode().equals(request.getCode());
+        boolean notExpired = user.getVerificationCodeExpiresAt() != null
+                && user.getVerificationCodeExpiresAt().isAfter(LocalDateTime.now());
+
+        if (!codeMatches || !notExpired) {
+            throw new InvalidVerificationCodeException("Invalid or expired verification code");
+        }
+
+        user.setEmailVerified(true);
+        user.setVerificationCode(null);
+        user.setVerificationCodeExpiresAt(null);
+        userRepository.save(user);
+
+        if (user instanceof Subscriber subscriber) {
+            emailService.sendWelcomeEmail(subscriber);
+        }
+
+        String role = user.getClass().getSimpleName().toUpperCase();
+        String token = jwtTokenProvider.generateToken(String.valueOf(user.getId()), role);
+
+        String department = null;
+        if (user instanceof Agent agent) {
+            department = agent.getAssignedService();
+        } else if (user instanceof Manager manager) {
+            department = manager.getDepartment();
+        }
+
+        return new AuthResponse(token, role, user.getId(), user.getName(), department, false);
+    }
+
+    @Override
+    public void resendVerificationCode(ResendVerificationRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new ResourceNotFoundException("No account found for that email"));
+
+        if (user.isEmailVerified()) {
+            throw new InvalidVerificationCodeException("This email is already verified");
+        }
+
+        user.setVerificationCode(generateCode());
+        user.setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_VALID_MINUTES));
+        userRepository.save(user);
+
+        if (user instanceof Subscriber subscriber) {
+            emailService.sendVerificationCode(subscriber, user.getVerificationCode());
+        }
     }
 
     private static String blankToNull(String value) {
         return (value == null || value.isBlank()) ? null : value;
+    }
+
+    // Zero-padded so it's always exactly 6 digits (e.g. "004821"), never a
+    // shorter number that would look wrong in the email.
+    private static String generateCode() {
+        return String.format("%06d", RANDOM.nextInt(1_000_000));
     }
 }

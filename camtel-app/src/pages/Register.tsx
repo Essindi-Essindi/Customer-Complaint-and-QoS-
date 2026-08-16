@@ -2,8 +2,12 @@ import { useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi, ApiError } from '../lib/api';
+import type { AuthResponse } from '../lib/api';
 import { Toast } from '../components/Toast';
 import { Recaptcha } from '../components/Recaptcha';
+import { Modal } from '../components/Modal';
+import { VerifyEmailForm } from '../components/VerifyEmailForm';
+import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from '../components/SettingsControls';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
@@ -41,6 +45,7 @@ const emptyForm: FormState = {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
   const { t, lang } = useI18n();
   const [form, setForm] = useState<FormState>(emptyForm);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -48,6 +53,11 @@ export default function Register() {
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
+  // Set right after a successful email registration to pop the verify-code
+  // modal open on top of this same page, instead of navigating away to
+  // /verify-email — the code the user just got by email is only useful for
+  // a few minutes, so keeping them in place removes a click and a page load.
+  const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
   const resetRecaptchaRef = useRef<() => void>(() => {});
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
@@ -84,7 +94,7 @@ export default function Register() {
     if (!validate()) return;
     setLoading(true);
     try {
-      await authApi.register({
+      const res = await authApi.register({
         name: form.name.trim(),
         ...(needsEmail ? { email: form.email.trim() } : {}),
         ...(needsPhone ? { phone: form.phone.trim() } : {}),
@@ -93,14 +103,33 @@ export default function Register() {
         serviceType: form.serviceType,
         captchaToken,
       });
-      setToast(t('register.success'));
-      setTimeout(() => navigate('/login'), 1500);
+      if (res.emailVerificationRequired) {
+        // No token yet — res.token is null until the code is confirmed, so
+        // there's nothing for AuthContext.login() to do here. Pop the code
+        // form open right on this page instead of navigating to
+        // /verify-email — see verifyEmail state above.
+        setToast(t('register.checkEmail'));
+        setVerifyEmail(form.email.trim());
+      } else {
+        setToast(t('register.success'));
+        setTimeout(() => navigate('/login'), 1500);
+      }
     } catch (err) {
       setBanner(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
       resetRecaptchaRef.current();
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleVerified = (res: AuthResponse) => {
+    // A successful verify-email always carries a real token — this is the
+    // point the account actually becomes usable, so log straight in rather
+    // than sending them to /login to type their password again.
+    login(res);
+    setVerifyEmail(null);
+    setToast(t('verify.success'));
+    setTimeout(() => navigate('/my-complaints'), 1200);
   };
 
   return (
@@ -153,7 +182,9 @@ export default function Register() {
               type="text"
               value={form.camtelAccountNumber}
               onChange={(e) => set('camtelAccountNumber', e.target.value)}
+              placeholder="0000000000"
             />
+            <span className="hint-inline">{t('register.noAccountHint')}</span>
             {errors.camtelAccountNumber && (
               <span className="field-error">{errors.camtelAccountNumber}</span>
             )}
@@ -223,6 +254,12 @@ export default function Register() {
         </p>
       </div>
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+      {verifyEmail && (
+        <Modal title={t('verify.title')} onClose={() => setVerifyEmail(null)}>
+          <p className="subtitle">{t('verify.subtitle')}</p>
+          <VerifyEmailForm initialEmail={verifyEmail} onVerified={handleVerified} />
+        </Modal>
+      )}
     </div>
   );
 }

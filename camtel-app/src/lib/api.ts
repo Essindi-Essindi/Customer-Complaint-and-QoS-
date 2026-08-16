@@ -110,12 +110,27 @@ export interface RegisterSubscriberRequest {
 
 // dto/response/AuthResponse.java
 // department: for agents = assignedService (MOBILE/ADSL/FTTH), for managers = department name
+// token: null when emailVerificationRequired is true — register() returns
+// this for an email-registered account instead of logging it straight in;
+// AuthContext.login() must not be called with a null-token response.
 export interface AuthResponse {
-  token: string;
+  token: string | null;
   role: Role;
   userId: number;
   name: string;
   department: string | null;
+  emailVerificationRequired: boolean;
+}
+
+// dto/request/VerifyEmailRequest.java
+export interface VerifyEmailRequest {
+  email: string;
+  code: string;
+}
+
+// dto/request/ResendVerificationRequest.java
+export interface ResendVerificationRequest {
+  email: string;
 }
 
 export const authApi = {
@@ -123,6 +138,13 @@ export const authApi = {
       request<AuthResponse>('/auth/register', { method: 'POST', body: data, auth: false }),
   login: (data: LoginRequest) =>
       request<AuthResponse>('/auth/login', { method: 'POST', body: data, auth: false }),
+  // Public — succeeds with the same shape as login() (a real token), since
+  // verifying is the last step of registration for an email-registered
+  // account.
+  verifyEmail: (data: VerifyEmailRequest) =>
+      request<AuthResponse>('/auth/verify-email', { method: 'POST', body: data, auth: false }),
+  resendVerification: (data: ResendVerificationRequest) =>
+      request<void>('/auth/resend-verification', { method: 'POST', body: data, auth: false }),
 };
 
 // ---------------------------------------------------------------------------

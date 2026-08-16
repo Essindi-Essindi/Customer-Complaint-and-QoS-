@@ -82,6 +82,21 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'login.demoHint': { en: 'Demo: 0600000000 / password', fr: 'Démo : 0600000000 / password' },
   'login.staffLink': { en: 'CAMTEL staff? Go to internal login', fr: 'Personnel CAMTEL ? Accéder à la connexion interne' },
   'login.backToRoleSelect': { en: '← Not you? Choose a different path', fr: '← Ce n’est pas vous ? Choisir un autre accès' },
+  'login.verifyEmailLink': { en: 'Have a verification code?', fr: 'Vous avez un code de vérification ?' },
+
+  // Verify email
+  'verify.title': { en: 'Verify your email', fr: 'Vérifiez votre e-mail' },
+  'verify.subtitle': {
+    en: 'Enter the 6-digit code we emailed you to finish creating your account.',
+    fr: 'Saisissez le code à 6 chiffres reçu par e-mail pour finaliser la création de votre compte.',
+  },
+  'verify.codeLabel': { en: 'Verification code', fr: 'Code de vérification' },
+  'verify.submit': { en: 'Verify', fr: 'Vérifier' },
+  'verify.verifying': { en: 'Verifying…', fr: 'Vérification…' },
+  'verify.resend': { en: 'Resend code', fr: 'Renvoyer le code' },
+  'verify.resending': { en: 'Resending…', fr: 'Envoi…' },
+  'verify.resendSuccess': { en: 'A new code has been sent', fr: 'Un nouveau code a été envoyé' },
+  'verify.success': { en: 'Email verified — welcome to CAMTEL!', fr: 'E-mail vérifié — bienvenue chez CAMTEL !' },
 
   // Internal login (staff)
   'internal.title': { en: 'CAMTEL Internal Platform', fr: 'Plateforme interne CAMTEL' },
@@ -109,6 +124,14 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'register.createAccount': { en: 'Create Account', fr: 'Créer un compte' },
   'register.creating': { en: 'Creating…', fr: 'Création…' },
   'register.selectEllipsis': { en: 'Select…', fr: 'Sélectionner…' },
+  'register.noAccountHint': {
+    en: "Don't have a CAMTEL account number yet? Enter 0000000000.",
+    fr: 'Vous n’avez pas encore de numéro de compte CAMTEL ? Saisissez 0000000000.',
+  },
+  'register.checkEmail': {
+    en: 'Almost there — check your email for a verification code',
+    fr: 'Presque terminé — consultez votre e-mail pour le code de vérification',
+  },
   'register.contactMethod': {
     en: 'How would you like us to contact you?',
     fr: 'Comment souhaitez-vous être contacté(e) ?',

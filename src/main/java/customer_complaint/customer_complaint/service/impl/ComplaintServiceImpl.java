@@ -170,6 +170,11 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setUpdatedAt(LocalDateTime.now());
         complaintRepository.save(complaint);
 
+        // FIX: claiming a complaint moves it to ASSIGNED but never told the
+        // subscriber - no SMS, no email, nothing. Both notification channels
+        // only ever fired from submit() and updateStatus().
+        notificationService.notifyStatusChanged(complaint);
+
         return toResponse(complaint);
     }
 
@@ -188,6 +193,10 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
         complaint.setUpdatedAt(LocalDateTime.now());
         complaintRepository.save(complaint);
+
+        // Same fix as claim() above — a manager assigning an agent is the
+        // other path that can produce ASSIGNED without ever notifying.
+        notificationService.notifyStatusChanged(complaint);
 
         return toResponse(complaint);
     }

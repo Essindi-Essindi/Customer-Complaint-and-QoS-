@@ -6,13 +6,16 @@ import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Notification;
 import customer_complaint.customer_complaint.model.enums.NotificationStatus;
 import customer_complaint.customer_complaint.repository.NotificationRepository;
+import customer_complaint.customer_complaint.service.EmailService;
 import customer_complaint.customer_complaint.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-// builds the sms text and queues it
+// builds the sms text and queues it; also fans out the email side of a
+// status change (EmailService itself decides which statuses actually
+// warrant an email — SUBMITTED / ASSIGNED / RESOLVED, not every status)
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -21,17 +24,20 @@ public class NotificationServiceImpl implements NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final SmsEventPublisher smsEventPublisher;
+    private final EmailService emailService;
 
     @Override
     public void notifyTicketCreated(Complaint complaint) {
         String message = "Your complaint " + complaint.getTicketNumber() + " has been received.";
         queueSms(complaint, message);
+        emailService.sendComplaintStatusEmail(complaint);
     }
 
     @Override
     public void notifyStatusChanged(Complaint complaint) {
         String message = "Your complaint " + complaint.getTicketNumber() + " is now " + complaint.getStatus() + ".";
         queueSms(complaint, message);
+        emailService.sendComplaintStatusEmail(complaint);
     }
 
     private void queueSms(Complaint complaint, String message) {

@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { GuestRoute } from './components/GuestRoute';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { PwaInstallButton } from './components/PwaInstallButton';
 import Register from './pages/Register';
+import VerifyEmail from './pages/VerifyEmail';
 import Login from './pages/Login';
 import RoleSelect from './pages/RoleSelect';
 import SubmitComplaint from './pages/SubmitComplaint';
@@ -27,10 +29,42 @@ export default function App() {
       <PwaInstallButton />
       <BrowserRouter>
         <Routes>
-          <Route path="/register" element={<Register />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/internal/login" element={<InternalLogin />} />
-          <Route path="/welcome" element={<RoleSelect />} />
+          <Route
+            path="/register"
+            element={
+              <GuestRoute>
+                <Register />
+              </GuestRoute>
+            }
+          />
+          {/* Not wrapped in GuestRoute: it manages its own post-verify
+              navigation (login() + a brief success toast before redirecting),
+              which an immediate GuestRoute bounce would cut short. */}
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route
+            path="/login"
+            element={
+              <GuestRoute>
+                <Login />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/internal/login"
+            element={
+              <GuestRoute>
+                <InternalLogin />
+              </GuestRoute>
+            }
+          />
+          <Route
+            path="/welcome"
+            element={
+              <GuestRoute>
+                <RoleSelect />
+              </GuestRoute>
+            }
+          />
 
           <Route
             path="/submit-complaint"

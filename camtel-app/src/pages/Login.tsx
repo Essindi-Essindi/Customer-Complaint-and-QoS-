@@ -83,6 +83,9 @@ export default function Login() {
         <p className="auth-footer">
           {t('common.dontHaveAccount')} <Link to="/register">{t('common.register')}</Link>
         </p>
+        <p className="auth-footer">
+          <Link to="/verify-email">{t('login.verifyEmailLink')}</Link>
+        </p>
 
         <div className="auth-role-switch">
           <Link to="/internal/login" className="auth-role-link">

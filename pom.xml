@@ -106,6 +106,13 @@
 		</dependency>
 
 
+		<!-- Email (registration verification, welcome, complaint status updates) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+
 		<!-- OpenFeign SMS Gateway Client -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
