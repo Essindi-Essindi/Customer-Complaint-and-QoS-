@@ -6,6 +6,7 @@ import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintManagerListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.dto.response.ComplaintStaffDetailResponse;
 import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
 import customer_complaint.customer_complaint.model.Agent;
 import customer_complaint.customer_complaint.model.CameroonLocations;
@@ -56,7 +57,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         Subscriber subscriber = (Subscriber) userRepository.findById(subscriberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscriber not found"));
 
-        validateLocation(request.getRegion(), request.getCity());
+        validateLocation(request.getRegion(), request.getCity(), request.getLocality());
 
         Complaint complaint = new Complaint();
         complaint.setIdempotencyKey(request.getIdempotencyKey());
@@ -65,6 +66,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setServiceType(parseServiceType(request.getServiceType()));
         complaint.setRegion(request.getRegion());
         complaint.setCity(request.getCity());
+        complaint.setLocality(request.getLocality());
         complaint.setDescription(request.getDescription());
         complaint.setStatus(ComplaintStatus.SUBMITTED);
         complaint.setTicketNumber(ticketService.nextTicketNumber());
@@ -121,11 +123,16 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     @Override
     public ComplaintResponse track(String ticketNumber) {
-        Complaint complaint = complaintRepository.findAll().stream()
-                .filter(c -> c.getTicketNumber().equals(ticketNumber))
-                .findFirst()
+        Complaint complaint = complaintRepository.findByTicketNumber(ticketNumber)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
         return toResponse(complaint);
+    }
+
+    @Override
+    public ComplaintStaffDetailResponse getStaffDetailByTicket(String ticketNumber) {
+        Complaint complaint = complaintRepository.findByTicketNumber(ticketNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+        return toStaffDetail(complaint);
     }
 
     @Override
@@ -225,12 +232,14 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
     }
 
-    // Keeps region/city homogeneous in the database — both are free-text
-    // columns, but every value that actually reaches the DB must come from
-    // CameroonLocations' closed list (the same list the frontend's
-    // region -> city cascading dropdown is built from), or the heatmap's
-    // per-region grouping would silently fragment on spelling variants.
-    private void validateLocation(String region, String city) {
+    // Keeps region/city/locality homogeneous in the database — all three are
+    // free-text columns, but every value that actually reaches the DB must
+    // come from CameroonLocations' closed lists (the same lists the
+    // frontend's region -> city -> locality cascading dropdown is built
+    // from, with CameroonLocations.OTHER as the shared "not in the list"
+    // escape hatch), or the heatmap's per-region grouping would silently
+    // fragment on spelling variants.
+    private void validateLocation(String region, String city, String locality) {
         if (!CameroonLocations.isValidRegion(region)) {
             throw new IllegalArgumentException(
                     "Invalid region '" + region + "'. Valid values: " + CameroonLocations.townsByRegion().keySet());
@@ -238,7 +247,14 @@ public class ComplaintServiceImpl implements ComplaintService {
         if (!CameroonLocations.isValidCityForRegion(region, city)) {
             throw new IllegalArgumentException(
                     "Invalid city '" + city + "' for region '" + region + "'. Valid values: "
-                            + CameroonLocations.townsByRegion().get(region));
+                            + CameroonLocations.townsByRegion().get(region) + " or '" + CameroonLocations.OTHER + "'");
+        }
+        // A city of OTHER has no locality list to validate against — the
+        // subscriber is expected to have described both in free text instead.
+        if (!CameroonLocations.OTHER.equals(city) && !CameroonLocations.isValidLocalityForCity(city, locality)) {
+            throw new IllegalArgumentException(
+                    "Invalid locality '" + locality + "' for city '" + city + "'. Valid values: "
+                            + CameroonLocations.localitiesForCity(city) + " or '" + CameroonLocations.OTHER + "'");
         }
     }
 
@@ -253,8 +269,19 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private ComplaintResponse toResponse(Complaint c) {
         return new ComplaintResponse(c.getId(), c.getTicketNumber(), c.getType(),
-                c.getServiceType().name(), c.getRegion(), c.getCity(), c.getDescription(),
-                c.getStatus().name(), c.getCreatedAt(), c.getUpdatedAt());
+                c.getServiceType().name(), c.getRegion(), c.getCity(), c.getLocality(),
+                c.getDescription(), c.getStatus().name(), c.getCreatedAt(), c.getUpdatedAt());
+    }
+
+    private ComplaintStaffDetailResponse toStaffDetail(Complaint c) {
+        return new ComplaintStaffDetailResponse(
+                c.getId(), c.getTicketNumber(), c.getType(), c.getServiceType().name(),
+                c.getRegion(), c.getCity(), c.getLocality(), c.getDescription(), c.getStatus().name(),
+                c.getCreatedAt(), c.getUpdatedAt(),
+                c.getSubscriber() != null ? c.getSubscriber().getName() : null,
+                c.getSubscriber() != null ? c.getSubscriber().getEmail() : null,
+                c.getSubscriber() != null ? c.getSubscriber().getPhone() : null,
+                c.getAgent() != null ? c.getAgent().getName() : null);
     }
 
     private ComplaintListItemResponse toListItem(Complaint c) {

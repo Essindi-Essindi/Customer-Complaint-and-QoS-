@@ -6,8 +6,9 @@ import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
 import { Toast } from '../components/Toast';
 import { agentComplaintsApi, complaintsApi, ApiError } from '../lib/api';
-import type { ComplaintListItemResponse } from '../lib/api';
+import type { ComplaintListItemResponse, ComplaintStaffDetailResponse } from '../lib/api';
 import { COMPLAINT_STATUSES, SERVICE_TYPE_LABELS, type ComplaintStatusValue, type ServiceTypeValue } from '../lib/constants';
+import { OTHER } from '../lib/cameroonLocations';
 import { useI18n } from '../context/I18nContext';
 import { useAuth } from '../context/AuthContext';
 
@@ -35,6 +36,12 @@ export default function AgentComplaints() {
   const [claimError, setClaimError] = useState('');
 
   const [selected, setSelected] = useState<ComplaintListItemResponse | null>(null);
+  // Full detail (city, locality, description, sender) — fetched on open()
+  // rather than carried on the list row, so list payloads stay lean. null
+  // while loading or if the fetch failed; selected/modalError still drive
+  // the modal in that case.
+  const [detail, setDetail] = useState<ComplaintStaffDetailResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [status, setStatus] = useState<ComplaintStatusValue>('ASSIGNED');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -70,6 +77,13 @@ export default function AgentComplaints() {
     setStatus(c.status);
     setNote('');
     setModalError('');
+    setDetail(null);
+    setDetailLoading(true);
+    agentComplaintsApi
+      .getByTicket(c.ticketNumber)
+      .then(setDetail)
+      .catch((err) => setModalError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
+      .finally(() => setDetailLoading(false));
   };
 
   const handleClaim = async (ev: FormEvent) => {
@@ -216,16 +230,48 @@ export default function AgentComplaints() {
 
         {selected && (
             <Modal title={selected.ticketNumber} onClose={() => setSelected(null)} wide>
-              <div className="detail-grid">
-                <div>
-                  <strong>{t('common.complaintType')}</strong>
-                  <div>{selected.type}</div>
+              {detailLoading ? (
+                <p>{t('common.loading')}</p>
+              ) : (
+                <div className="detail-grid">
+                  <div>
+                    <strong>{t('common.complaintType')}</strong>
+                    <div>{detail?.type ?? selected.type}</div>
+                  </div>
+                  <div>
+                    <strong>{t('common.region')}</strong>
+                    <div>{detail?.region ?? selected.region}</div>
+                  </div>
+                  {detail && (
+                    <>
+                      <div>
+                        <strong>{t('common.city')}</strong>
+                        <div>{detail.city === OTHER ? t('submit.otherNotListed') : detail.city}</div>
+                      </div>
+                      {detail.locality && (
+                        <div>
+                          <strong>{t('submit.locality')}</strong>
+                          <div>{detail.locality === OTHER ? t('submit.otherNotListed') : detail.locality}</div>
+                        </div>
+                      )}
+                      <div>
+                        <strong>{t('common.sender')}</strong>
+                        <div>{detail.subscriberName ?? '—'}</div>
+                      </div>
+                      {(detail.subscriberEmail || detail.subscriberPhone) && (
+                        <div>
+                          <strong>{t('common.contact')}</strong>
+                          <div>{[detail.subscriberEmail, detail.subscriberPhone].filter(Boolean).join(' · ')}</div>
+                        </div>
+                      )}
+                      <div className="full">
+                        <strong>{t('common.description')}</strong>
+                        <div>{detail.description || t('detail.noDescription')}</div>
+                      </div>
+                    </>
+                  )}
                 </div>
-                <div>
-                  <strong>{t('common.region')}</strong>
-                  <div>{selected.region}</div>
-                </div>
-              </div>
+              )}
 
               {modalError && <div className="banner error">{modalError}</div>}
 

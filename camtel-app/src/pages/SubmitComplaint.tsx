@@ -12,11 +12,11 @@ import {
   SERVICE_TYPE_LABELS,
   type ServiceTypeValue,
 } from '../lib/constants';
-import { TOWNS_BY_REGION } from '../lib/cameroonLocations';
+import { TOWNS_BY_REGION, LOCALITIES_BY_CITY, OTHER } from '../lib/cameroonLocations';
 
 // Fields map 1:1 to dto/request/ComplaintSubmissionRequest.java:
-// idempotencyKey, type, serviceType, region, city, description, categoryId.
-// The complaint-type picker is populated from GET /api/categories
+// idempotencyKey, type, serviceType, region, city, locality, description,
+// categoryId. The complaint-type picker is populated from GET /api/categories
 // (SubscriberCategoryController), which mirrors whatever the manager has
 // configured on the Configuration page — no more hardcoded type list. `type`
 // (the free-text field the backend still requires) is derived from the
@@ -30,10 +30,13 @@ interface FormState {
   serviceType: ServiceTypeValue | '';
   region: string;
   city: string;
+  locality: string;
   description: string;
 }
 
-const emptyForm: FormState = { categoryId: '', serviceType: '', region: '', city: '', description: '' };
+const emptyForm: FormState = {
+  categoryId: '', serviceType: '', region: '', city: '', locality: '', description: '',
+};
 
 export default function SubmitComplaint() {
   const { t, lang } = useI18n();
@@ -58,12 +61,38 @@ export default function SubmitComplaint() {
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Changing region invalidates whatever city was picked for the old one —
-  // TOWNS_BY_REGION's lists don't overlap, so the previous city is never
-  // valid for a newly-picked region.
-  const setRegion = (region: string) => setForm((f) => ({ ...f, region, city: '' }));
+  // Changing region invalidates whatever city (and by extension locality)
+  // was picked for the old one — TOWNS_BY_REGION's lists don't overlap, so
+  // neither is ever valid for a newly-picked region.
+  const setRegion = (region: string) => setForm((f) => ({ ...f, region, city: '', locality: '' }));
 
-  const cityOptions = form.region ? TOWNS_BY_REGION[form.region] ?? [] : [];
+  // Changing city invalidates whatever locality was picked for the old one,
+  // same reasoning.
+  const setCity = (city: string) => setForm((f) => ({ ...f, city, locality: '' }));
+
+  // OTHER is always offered on both — the subscriber's escape hatch when
+  // their real city/locality isn't in the curated list, at which point the
+  // description placeholder below asks them to name it there instead.
+  const cityOptions = form.region ? [...(TOWNS_BY_REGION[form.region] ?? []), OTHER] : [];
+  // Only rendered once a real city (not OTHER) is picked — there's nothing
+  // to cascade a locality list from otherwise. Every curated city still
+  // ends its list with OTHER; a city with no curated list at all (most of
+  // them — see cameroonLocations.ts) just offers OTHER alone.
+  const localityOptions =
+    form.city && form.city !== OTHER ? [...(LOCALITIES_BY_CITY[form.city] ?? []), OTHER] : [];
+  const showLocality = form.city !== '' && form.city !== OTHER;
+
+  // Whenever the subscriber picked OTHER for city or locality, there's no
+  // structured location data for that part — the description is the only
+  // place that information can still reach an agent, so it stops being
+  // optional in that case.
+  const descriptionRequired = form.city === OTHER || form.locality === OTHER;
+  const descriptionPlaceholder =
+    form.city === OTHER
+      ? t('submit.descriptionPlaceholderCityOther')
+      : form.locality === OTHER
+        ? t('submit.descriptionPlaceholderLocalityOther')
+        : t('submit.descriptionPlaceholder');
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -72,6 +101,8 @@ export default function SubmitComplaint() {
     if (!form.serviceType) e.serviceType = t('validation.required');
     if (!form.region) e.region = t('validation.required');
     if (!form.city) e.city = t('validation.required');
+    if (showLocality && !form.locality) e.locality = t('validation.required');
+    if (descriptionRequired && !form.description.trim()) e.description = t('submit.descriptionRequiredOther');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -92,6 +123,7 @@ export default function SubmitComplaint() {
         serviceType: form.serviceType as ServiceTypeValue,
         region: form.region,
         city: form.city,
+        locality: showLocality ? form.locality : undefined,
         description: form.description.trim() || undefined,
         captchaToken,
       });
@@ -172,29 +204,50 @@ export default function SubmitComplaint() {
             <label>{t('common.city')}</label>
             <select
               value={form.city}
-              onChange={(e) => set('city', e.target.value)}
+              onChange={(e) => setCity(e.target.value)}
               disabled={!form.region}
             >
               <option value="">
                 {form.region ? t('register.selectEllipsis') : t('submit.pickRegionFirst')}
               </option>
               {cityOptions.map((c) => (
-                <option key={c}>{c}</option>
+                <option key={c} value={c}>
+                  {c === OTHER ? t('submit.otherNotListed') : c}
+                </option>
               ))}
             </select>
             {errors.city && <span className="field-error">{errors.city}</span>}
           </div>
 
-          <div className="field">
+          {showLocality && (
+            <div className={`field ${errors.locality ? 'error' : ''}`}>
+              <label>{t('submit.locality')}</label>
+              <select value={form.locality} onChange={(e) => set('locality', e.target.value)}>
+                <option value="">{t('register.selectEllipsis')}</option>
+                {localityOptions.map((l) => (
+                  <option key={l} value={l}>
+                    {l === OTHER ? t('submit.otherNotListed') : l}
+                  </option>
+                ))}
+              </select>
+              {errors.locality && <span className="field-error">{errors.locality}</span>}
+            </div>
+          )}
+
+          <div className={`field ${errors.description ? 'error' : ''}`}>
             <label>
-              {t('common.description')} <span className="hint-inline">{t('submit.optional')}</span>
+              {t('common.description')}{' '}
+              <span className="hint-inline">
+                {descriptionRequired ? t('submit.required') : t('submit.optional')}
+              </span>
             </label>
             <textarea
               rows={4}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
-              placeholder={t('submit.descriptionPlaceholder')}
+              placeholder={descriptionPlaceholder}
             />
+            {errors.description && <span className="field-error">{errors.description}</span>}
           </div>
 
           <div className={`field ${errors.captcha ? 'error' : ''}`}>

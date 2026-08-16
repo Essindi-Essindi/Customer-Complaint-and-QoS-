@@ -651,6 +651,17 @@ a:hover {
   width: auto;
   flex-shrink: 0;
 }
+.sort-by-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--muted);
+  flex-shrink: 0;
+}
+.sort-by-label select {
+  width: auto;
+}
 
 .top-nav {
   display: flex;
@@ -666,6 +677,9 @@ a:hover {
   z-index: 100;
 }
 .nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-weight: 800;
   font-size: 1.2rem;
   letter-spacing: 0.04em;
@@ -673,6 +687,11 @@ a:hover {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+.nav-logo-img {
+  height: 28px;
+  width: auto;
+  flex-shrink: 0;
 }
 .nav-center {
   flex: 1;
@@ -683,6 +702,8 @@ a:hover {
 .nav-actions {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 12px;
 }
 .nav-link {
@@ -728,6 +749,9 @@ a:hover {
   animation: beam 6s linear infinite;
 }
 .sidebar-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   padding: 22px 20px;
   font-weight: 800;
   font-size: 1.3rem;
@@ -737,6 +761,11 @@ a:hover {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+.sidebar-logo-img {
+  height: 32px;
+  width: auto;
+  flex-shrink: 0;
 }
 .sidebar-nav {
   flex: 1;
@@ -773,6 +802,7 @@ a:hover {
 .staff-header {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 14px 24px;
   background: var(--panel-solid);
@@ -845,10 +875,12 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-wrap: wrap;
   gap: 16px;
   margin-top: 14px;
   font-size: 0.85rem;
   color: var(--text-dim);
+  text-align: center;
 }
 
 .status-badge {
@@ -1510,6 +1542,19 @@ a:hover {
   .sidebar {
     width: 100%;
   }
+  /* A vertically-stacked nav list eats the whole screen above the fold on
+     mobile before any actual page content shows — turned into a horizontal
+     scrollable pill bar instead, same idea as a mobile tab bar. */
+  .sidebar-nav {
+    display: flex;
+    overflow-x: auto;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  .sidebar-link {
+    white-space: nowrap;
+    margin-bottom: 0;
+  }
   .kpi-row {
     grid-template-columns: 1fr;
   }
@@ -1518,6 +1563,9 @@ a:hover {
   }
   .top-nav {
     flex-wrap: wrap;
+  }
+  .page-content {
+    padding: 16px;
   }
   .breakdown-cols {
     grid-template-columns: 1fr;

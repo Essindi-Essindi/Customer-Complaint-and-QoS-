@@ -1,9 +1,18 @@
-// Canonical region -> town list for Cameroon, used to populate the
-// region/city dropdowns on complaint submission and to keep region/city
-// values homogeneous in the database (no more free-typed city spelling
-// variants breaking the heatmap's grouping).
+// Canonical region -> city -> locality data for Cameroon, used to populate
+// the region -> city -> locality cascading dropdowns on complaint
+// submission and to keep those three values homogeneous in the database (no
+// more free-typed spelling variants breaking the heatmap's grouping).
+// Mirrors src/main/java/.../model/CameroonLocations.java exactly — keep
+// both in sync by hand if either changes, there's no shared source of truth
+// across the Java/TypeScript boundary.
 //
-// Towns are each region's chief town (the regional capital) followed by
+// OTHER is the shared "not in the list" escape hatch, always offered as the
+// last option for both city and locality — picking it is expected to come
+// with the real place named in the complaint description instead (see
+// SubmitComplaint.tsx's dynamic placeholder).
+export const OTHER = 'Other';
+
+// Cities are each region's chief town (the regional capital) followed by
 // every one of that region's official department (département) capitals,
 // sourced from:
 //   - Region list + capitals: https://en.wikipedia.org/wiki/Regions_of_Cameroon
@@ -12,33 +21,17 @@
 //     (see the trickier ones: Fako's capital is Limbé, not Buea — Buea is the
 //     *region's* capital and is also in Fako department, so both are listed).
 //
-// Yaoundé and Douala additionally list well-known quartiers (neighborhoods)
-// — e.g. Mendong, Bastos, Akwa — since a subscriber in a big city rarely
-// thinks of themselves as being in "Yaoundé" broadly; these narrow the
-// heatmap and give agents a more useful location than the department capital
-// alone. Sourced from French Wikipedia's quartier lists (fr.wikipedia.org/wiki/Quartiers_de_Yaoundé
-// and .../Quartiers_de_Douala) — a curated, representative subset, not the
-// full ~114 (Yaoundé) / ~120 (Douala) exhaustive lists.
-//
 // Keys must exactly match REGIONS in constants.ts. First entry in each list
 // is always that region's own capital, so it sorts first in the dropdown.
 export const TOWNS_BY_REGION: Record<string, string[]> = {
   Adamaoua: ['Ngaoundéré', 'Meiganga', 'Tibati', 'Tignère', 'Banyo'],
   Centre: [
-    'Yaoundé', 'Bastos', 'Nlongkak', 'Elig-Essono', 'Mendong', 'Etoudi',
-    'Ngousso', 'Mvog-Ada', 'Emana', 'Mvan', 'Nsam', 'Obili', 'Efoulan',
-    'Melen', 'Tsinga', 'Biyem-Assi', 'Ekounou', 'Odza',
-    'Mbalmayo', 'Bafia', 'Monatélé', 'Ntui', 'Mfou', 'Ngoumou', 'Eséka',
-    'Akonolinga', 'Nanga-Eboko',
+    'Yaoundé', 'Mbalmayo', 'Bafia', 'Monatélé', 'Ntui', 'Mfou', 'Ngoumou',
+    'Eséka', 'Akonolinga', 'Nanga-Eboko',
   ],
   East: ['Bertoua', 'Batouri', 'Abong-Mbang', 'Yokadouma'],
   'Far North': ['Maroua', 'Kousséri', 'Yagoua', 'Kaélé', 'Mora', 'Mokolo'],
-  Littoral: [
-    'Douala', 'Akwa', 'Bonanjo', 'Bonapriso', 'Bonabéri', 'Deido', 'New-Bell',
-    'Ndokoti', 'Bépanda', 'Makepe', 'Bonamoussadi', 'Logbaba', 'Kotto',
-    'PK8', 'PK10', 'PK12', 'Yassa',
-    'Nkongsamba', 'Édéa', 'Yabassi',
-  ],
+  Littoral: ['Douala', 'Nkongsamba', 'Édéa', 'Yabassi'],
   North: ['Garoua', 'Guider', 'Poli', 'Tcholliré'],
   'North West': ['Bamenda', 'Kumbo', 'Wum', 'Nkambe', 'Fundong', 'Mbengwi', 'Ndop'],
   South: ['Ebolowa', 'Kribi', 'Sangmélima', 'Ambam'],
@@ -46,5 +39,39 @@ export const TOWNS_BY_REGION: Record<string, string[]> = {
   West: [
     'Bafoussam', 'Dschang', 'Mbouda', 'Foumban', 'Bafang', 'Bangangté',
     'Bandjoun', 'Baham',
+  ],
+};
+
+// Localities (quartiers) are only curated for each region's own capital —
+// the one city per region large enough that "which quartier" is actually
+// useful to know. A curated representative subset (8-20 each), not each
+// city's full official quartier list (Yaoundé alone has ~114), sourced from
+// French Wikipedia's quartier list pages (fr.wikipedia.org/wiki/Quartiers_de_*)
+// where one exists, otherwise cross-referenced across multiple sources. A
+// city with no entry here still gets a working locality field — it just
+// only offers OTHER, since there's no curated list to show.
+export const LOCALITIES_BY_CITY: Record<string, string[]> = {
+  Ngaoundéré: ['Baladji', 'Dang', 'Bamyanga', 'Sabongari', 'Wakwa', 'Béka-Hosséré', 'Madagascar', 'Joli-Soir'],
+  Yaoundé: [
+    'Bastos', 'Nlongkak', 'Elig-Essono', 'Mendong', 'Montée Jouvence', 'Etoudi',
+    'Ngousso', 'Mvog-Ada', 'Emana', 'Mvan', 'Nsam', 'Obili', 'Efoulan',
+    'Melen', 'Tsinga', 'Biyem-Assi', 'Ekounou', 'Odza',
+  ],
+  Bertoua: ['Mokolo', 'Nkolbikon', 'Madagascar', 'Tigaza', 'Ndongoffi', 'Bamvele', 'Nyangaza'],
+  Maroua: ['Domayo', 'Djarengol', 'Kongola', 'Makabaye', 'Ouro-Tchédé', 'Pallar', 'Baouliwol', 'Hardé'],
+  Douala: [
+    'Akwa', 'Bonanjo', 'Bonapriso', 'Bonabéri', 'Deido', 'New-Bell', 'Ndokoti',
+    'Bépanda', 'Makepe', 'Bonamoussadi', 'Logbaba', 'Kotto', 'PK8', 'PK10', 'PK12', 'Yassa',
+  ],
+  Garoua: ['Roumdé-Adjia', 'Foulbéré', 'Kakataré', 'Lopéré', 'Poumpoumré', 'Yelwa', 'Marouaré'],
+  Bamenda: ['Nkwen', 'Up Station', 'Commercial Avenue', 'Ntamulung', 'Mankon', 'Mendankwe', 'New-Layout'],
+  Ebolowa: ['Angalé', 'Ébolowa-Si 1', 'Ébolowa-Si 2', 'Abang', "Nko'ovos", 'Mekalat-Yévol'],
+  Buea: [
+    'Molyko', 'Buea Station', 'Muea', 'GRA', 'Mile 16', 'Great Soppo',
+    'Bonduma', 'Likoko-Membea', 'Bokwaongo', 'Small Soppo',
+  ],
+  Bafoussam: [
+    'Banengo', 'Djeleng', 'Famla', 'Kamkop', 'Tamdja', 'Quartier Eveché',
+    'Quartier Haoussa', 'Djemoum', 'Tougang',
   ],
 };

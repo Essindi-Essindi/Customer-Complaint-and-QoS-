@@ -28,6 +28,8 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'common.description': { en: 'Description', fr: 'Description' },
   'common.region': { en: 'Region', fr: 'Région' },
   'common.city': { en: 'City', fr: 'Ville' },
+  'common.sender': { en: 'Sender', fr: 'Expéditeur' },
+  'common.contact': { en: 'Contact', fr: 'Contact' },
   'common.action': { en: 'Action', fr: 'Action' },
   'common.actions': { en: 'Actions', fr: 'Actions' },
   'common.complaintType': { en: 'Complaint Type', fr: 'Type de plainte' },
@@ -164,6 +166,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   // Complaint detail page
   'detail.affectedService': { en: 'Affected Service', fr: 'Service concerné' },
   'detail.submissionDate': { en: 'Submission date', fr: 'Date de soumission' },
+  'detail.noDescription': { en: 'No description provided', fr: 'Aucune description fournie' },
   'detail.notFound': { en: 'Complaint not found.', fr: 'Plainte introuvable.' },
   'detail.backToMyComplaints': { en: '← My Complaints', fr: '← Mes plaintes' },
   'detail.lastUpdated': { en: 'Last updated:', fr: 'Dernière mise à jour :' },
@@ -204,14 +207,14 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'common.yes': { en: 'Yes', fr: 'Oui' },
 
   // Login
-  'login.wrongPortal': {
-    en: 'This account is not a subscriber account. Use the staff login instead.',
-    fr: 'Ce compte n’est pas un compte abonné. Utilisez la connexion du personnel.',
-  },
-  'internal.wrongPortal': {
-    en: 'This is a subscriber account. Use the customer login instead.',
-    fr: 'Ceci est un compte abonné. Utilisez la connexion client.',
-  },
+  // Deliberately identical wording to the backend's genuine bad-password
+  // InvalidCredentialsException("Invalid credentials") — a login attempt on
+  // the wrong portal (subscriber creds on staff login, or vice versa) must
+  // read exactly the same as a wrong password. The previous copy ("this
+  // account is not a subscriber account") confirmed to anyone probing a
+  // known email/phone both that the account exists and which portal it
+  // belongs to — a real account-enumeration leak, not just wording.
+  'common.invalidCredentials': { en: 'Invalid credentials', fr: 'Identifiants invalides' },
 
   // Register
   'register.success': { en: 'Account created — please log in', fr: 'Compte créé — veuillez vous connecter' },
@@ -232,11 +235,26 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'submit.complaintType': { en: 'Complaint type', fr: 'Type de plainte' },
   'submit.affectedService': { en: 'Affected service', fr: 'Service concerné' },
   'submit.pickRegionFirst': { en: 'Pick a region first', fr: "Choisissez d'abord une région" },
+  'submit.locality': { en: 'Locality / quarter', fr: 'Localité / quartier' },
+  'submit.otherNotListed': { en: 'Other / not listed', fr: 'Autre / non listé(e)' },
   'submit.descriptionPlaceholder': {
     en: 'Enter your locality to give us more details (e.g. street, landmark, quarter block)',
     fr: 'Indiquez votre localité pour nous donner plus de détails (rue, repère, quartier précis)',
   },
+  'submit.descriptionPlaceholderCityOther': {
+    en: "Your city isn't in our list — please tell us your exact city and locality here",
+    fr: "Votre ville n'est pas dans notre liste — indiquez ici votre ville et votre localité exactes",
+  },
+  'submit.descriptionPlaceholderLocalityOther': {
+    en: "Your locality isn't in our list — please tell us your exact locality/quarter here",
+    fr: "Votre localité n'est pas dans notre liste — indiquez ici votre localité/quartier exact",
+  },
+  'submit.descriptionRequiredOther': {
+    en: 'Required — please name your exact city/locality since it was not in the list',
+    fr: "Obligatoire — précisez votre ville/localité exacte puisqu'elle n'était pas dans la liste",
+  },
   'submit.optional': { en: '(optional)', fr: '(facultatif)' },
+  'submit.required': { en: '(required)', fr: '(obligatoire)' },
   'submit.submitting': { en: 'Submitting…', fr: 'Envoi…' },
   'submit.submitComplaint': { en: 'Submit Complaint', fr: 'Déposer une plainte' },
 
@@ -287,6 +305,8 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'heatmap.empty': { en: 'No data for the selected period', fr: 'Aucune donnée pour la période sélectionnée' },
   'heatmap.complaints': { en: 'complaints', fr: 'plaintes' },
   'heatmap.byCity': { en: 'By city', fr: 'Par ville' },
+  'heatmap.sortBy': { en: 'Sort by', fr: 'Trier par' },
+  'heatmap.sortByCount': { en: 'Most complaints', fr: 'Le plus de plaintes' },
   'heatmap.mapAriaLabel': {
     en: 'Map of Cameroon shaded by complaint count per region',
     fr: 'Carte du Cameroun colorée selon le nombre de plaintes par région',

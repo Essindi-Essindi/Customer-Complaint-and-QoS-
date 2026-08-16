@@ -24,6 +24,10 @@ public class ComplaintSubmissionRequest {
     @NotBlank
     private String city;
 
+    // Optional — not every city has a curated locality list, and "Other" is
+    // always a valid choice even when it does.
+    private String locality;
+
     private String description;
 
     private Long categoryId;

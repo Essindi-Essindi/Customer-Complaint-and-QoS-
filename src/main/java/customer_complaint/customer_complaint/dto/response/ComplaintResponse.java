@@ -18,6 +18,7 @@ public class ComplaintResponse {
     private String serviceType;
     private String region;
     private String city;
+    private String locality;
     private String description;
     private String status;
     private LocalDateTime createdAt;

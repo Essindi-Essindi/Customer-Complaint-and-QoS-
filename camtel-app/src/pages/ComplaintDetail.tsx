@@ -7,13 +7,16 @@ import type { ComplaintResponse } from '../lib/api';
 import { Toast } from '../components/Toast';
 import { useI18n } from '../context/I18nContext';
 import { COMPLAINT_STATUSES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
+import { OTHER } from '../lib/cameroonLocations';
 import { ChevronLeftIcon } from '../components/icons';
 
 // GET /api/complaints/track/{ticketNumber} returns the full ComplaintResponse:
-// id, ticketNumber, type, serviceType, region, city, description, status,
-// createdAt, updatedAt. The backend does NOT return a resolution note,
-// assigned agent name, rating, or an audit trail on this (or any) endpoint,
-// so none of that is shown here — showing it would just be inventing data.
+// id, ticketNumber, type, serviceType, region, city, locality, description,
+// status, createdAt, updatedAt. The backend does NOT return a resolution
+// note, assigned agent name, rating, or an audit trail on this (or any)
+// endpoint, so none of that is shown here — showing it would just be
+// inventing data. city/locality show the translated "Other / not listed"
+// label instead of the raw OTHER sentinel when that's what was picked.
 export default function ComplaintDetail() {
   const { ticketNumber } = useParams<{ ticketNumber: string }>();
   const { t, lang } = useI18n();
@@ -112,8 +115,14 @@ export default function ComplaintDetail() {
           </div>
           <div>
             <strong>{t('common.city')}</strong>
-            <div>{complaint.city}</div>
+            <div>{complaint.city === OTHER ? t('submit.otherNotListed') : complaint.city}</div>
           </div>
+          {complaint.locality && (
+            <div>
+              <strong>{t('submit.locality')}</strong>
+              <div>{complaint.locality === OTHER ? t('submit.otherNotListed') : complaint.locality}</div>
+            </div>
+          )}
           <div>
             <strong>{t('detail.submissionDate')}</strong>
             <div>{new Date(complaint.createdAt).toLocaleString()}</div>

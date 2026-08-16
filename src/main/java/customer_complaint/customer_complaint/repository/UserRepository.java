@@ -2,6 +2,8 @@ package customer_complaint.customer_complaint.repository;
 
 import customer_complaint.customer_complaint.model.Agent;
 import customer_complaint.customer_complaint.model.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,4 +30,16 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // All active agents assigned to a particular service
     @Query("SELECT a FROM Agent a WHERE a.assignedService = :service AND a.active = true")
     List<Agent> findActiveAgentsByService(@Param("service") String service);
+
+    // Paginated user list, optionally filtered by role — backs the manager
+    // user-management page. `role` isn't a mapped @Column (it's User's
+    // @DiscriminatorColumn), so a derived Spring Data method can't query it;
+    // this goes straight at the underlying column by name instead. Still
+    // returns real User/Agent/Manager/Subscriber instances — Hibernate reads
+    // that same column per row to pick the concrete type regardless of
+    // whether the query that found the row was JPQL or native SQL.
+    @Query(value = "SELECT * FROM users WHERE (:role IS NULL OR role = :role)",
+            countQuery = "SELECT COUNT(*) FROM users WHERE (:role IS NULL OR role = :role)",
+            nativeQuery = true)
+    Page<User> findPageByRole(@Param("role") String role, Pageable pageable);
 }

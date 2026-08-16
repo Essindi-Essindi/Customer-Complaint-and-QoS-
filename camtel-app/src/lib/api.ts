@@ -158,6 +158,7 @@ export interface ComplaintSubmissionRequest {
   serviceType: ServiceTypeValue;
   region: string;
   city: string;
+  locality?: string;
   description?: string;
   categoryId?: number;
   captchaToken: string;
@@ -171,6 +172,7 @@ export interface ComplaintResponse {
   serviceType: string;
   region: string;
   city: string;
+  locality: string | null;
   description: string | null;
   status: ComplaintStatusValue;
   createdAt: string;
@@ -217,6 +219,28 @@ export interface ComplaintStatusUpdateRequest {
   resolutionNote?: string;
 }
 
+// dto/response/ComplaintStaffDetailResponse.java — everything ComplaintResponse
+// has plus who submitted it and who's assigned. Only ever returned by the
+// agent/manager-only by-ticket lookup below, never by the public
+// complaintsApi.track() — see that DTO's javadoc for why.
+export interface ComplaintStaffDetailResponse {
+  id: number;
+  ticketNumber: string;
+  type: string;
+  serviceType: string;
+  region: string;
+  city: string;
+  locality: string | null;
+  description: string | null;
+  status: ComplaintStatusValue;
+  createdAt: string;
+  updatedAt: string | null;
+  subscriberName: string | null;
+  subscriberEmail: string | null;
+  subscriberPhone: string | null;
+  assignedAgentName: string | null;
+}
+
 export const agentComplaintsApi = {
   listAssigned: () => request<ComplaintListItemResponse[]>('/agent/complaints/assigned'),
   // All complaints for the service the agent is assigned to (agent-only)
@@ -229,6 +253,9 @@ export const agentComplaintsApi = {
         method: 'PATCH',
         body: data,
       }),
+  // Full detail by ticket number — sender name/email/phone included.
+  getByTicket: (ticketNumber: string) =>
+      request<ComplaintStaffDetailResponse>(`/agent/complaints/by-ticket/${encodeURIComponent(ticketNumber)}`),
 };
 
 // ---------------------------------------------------------------------------
@@ -239,6 +266,14 @@ export const agentComplaintsApi = {
 export interface HeatMapResponse {
   region: string;
   city: string;
+  complaintCount: number;
+}
+
+// dto/response/RegionTotalResponse.java — always the complete per-region
+// totals (at most 10 rows), independent of the paginated city breakdown
+// above. Feeds CameroonHeatMap.tsx's map shading.
+export interface RegionTotalResponse {
+  region: string;
   complaintCount: number;
 }
 
@@ -259,9 +294,25 @@ export interface RecurringPatternResponse {
 }
 
 export const analyticsApi = {
-  // start/end are required LocalDate (YYYY-MM-DD) query params; serviceType optional.
-  heatMap: (start: string, end: string, serviceType?: ServiceTypeValue) =>
-      request<HeatMapResponse[]>('/analytics/heatmap', { query: { start, end, serviceType } }),
+  // start/end are required LocalDate (YYYY-MM-DD) query params; serviceType
+  // optional. Paginated — backs the heatmap page's "by city" table. Region
+  // totals for the map itself come from regionTotals() below instead, since
+  // the map needs every region's true total regardless of which page of
+  // this table is showing.
+  // sortBy: 'region' | 'city' | undefined (complaint count descending, the default)
+  heatMap: (
+      start: string,
+      end: string,
+      serviceType?: ServiceTypeValue,
+      sortBy?: 'region' | 'city',
+      page = 0,
+      size = 10,
+  ) =>
+      request<SpringPage<HeatMapResponse>>('/analytics/heatmap', {
+        query: { start, end, serviceType, sortBy, page, size },
+      }),
+  regionTotals: (start: string, end: string, serviceType?: ServiceTypeValue) =>
+      request<RegionTotalResponse[]>('/analytics/heatmap/regions', { query: { start, end, serviceType } }),
   kpis: (groupBy: 'type' | 'region' | 'team') =>
       request<KpiResponse[]>('/analytics/kpis', { query: { groupBy } }),
   recurringPatterns: () => request<RecurringPatternResponse[]>('/analytics/recurring-patterns'),
@@ -447,7 +498,8 @@ export interface UserResponse {
 }
 
 export const usersApi = {
-  list: (role?: Role) => request<UserResponse[]>('/manager/users', { query: { role } }),
+  list: (role?: Role, page = 0, size = 20) =>
+      request<SpringPage<UserResponse>>('/manager/users', { query: { role, page, size } }),
   create: (data: UserCreateRequest) =>
       request<UserResponse>('/manager/users', { method: 'POST', body: data }),
   update: (userId: number, data: UserUpdateRequest) =>

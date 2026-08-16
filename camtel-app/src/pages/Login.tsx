@@ -30,8 +30,12 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await authApi.login({ identifier: identifier.trim(), password });
+      // Deliberately generic: reads exactly like a wrong password, not
+      // "this is a staff account" — telling an attacker probing an
+      // identifier that the account exists (and what kind) is a real
+      // account-enumeration leak, not just unfriendly wording.
       if (data.role !== 'SUBSCRIBER') {
-        setError(t('login.wrongPortal'));
+        setError(t('common.invalidCredentials'));
         return;
       }
       login(data);

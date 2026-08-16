@@ -6,11 +6,12 @@ import customer_complaint.customer_complaint.dto.response.UserResponse;
 import customer_complaint.customer_complaint.service.UserManagementService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 // manager endpoints for user accounts
 @RestController
@@ -38,7 +39,11 @@ public class UserManagementController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserResponse>> list(@RequestParam(required = false) String role) {
-        return ResponseEntity.ok(userManagementService.listUsers(role));
+    public ResponseEntity<Page<UserResponse>> list(
+            @RequestParam(required = false) String role,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(userManagementService.listUsers(role, pageable));
     }
 }

@@ -6,6 +6,7 @@ import customer_complaint.customer_complaint.dto.request.RatingRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintManagerListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.dto.response.ComplaintStaffDetailResponse;
 import customer_complaint.customer_complaint.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -31,6 +32,12 @@ public interface ComplaintService {
             LocalDate start, LocalDate end, Pageable pageable);
 
     ComplaintResponse track(String ticketNumber);
+
+    // Agent/manager-only — same lookup as track() but returns the subscriber's
+    // name/email/phone and assigned agent name too, which track() deliberately
+    // never does (it's public/unauthenticated — see ComplaintStaffDetailResponse's
+    // javadoc). Backs the agent "view" modal and the manager's ticket lookup.
+    ComplaintStaffDetailResponse getStaffDetailByTicket(String ticketNumber);
 
     ComplaintResponse updateStatus(User actor, Long complaintId, ComplaintStatusUpdateRequest request);
 

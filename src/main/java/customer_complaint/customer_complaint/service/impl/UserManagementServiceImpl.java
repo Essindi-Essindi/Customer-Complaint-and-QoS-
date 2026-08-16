@@ -11,10 +11,10 @@ import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.service.UserManagementService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 // creates/updates agents and managers
 @Service
@@ -85,11 +85,12 @@ public class UserManagementServiceImpl implements UserManagementService {
     }
 
     @Override
-    public List<UserResponse> listUsers(String role) {
-        return userRepository.findAll().stream()
-                .filter(u -> role == null || u.getClass().getSimpleName().equalsIgnoreCase(role))
-                .map(this::toResponse)
-                .toList();
+    public Page<UserResponse> listUsers(String role, Pageable pageable) {
+        // role already arrives uppercase from the frontend (Role type is
+        // 'SUBSCRIBER' | 'AGENT' | 'MANAGER'), matching the @DiscriminatorValue
+        // on each User subclass exactly, so it's passed straight through to
+        // the query rather than re-derived from a class name.
+        return userRepository.findPageByRole(role, pageable).map(this::toResponse);
     }
 
     private UserResponse toResponse(User user) {

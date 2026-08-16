@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../context/I18nContext';
+import camtelLogo from '../assets/camtel-logo.png';
 
 interface Props {
   variant: 'agent' | 'manager';
@@ -27,7 +28,10 @@ export function StaffSidebar({ variant }: Props) {
 
   return (
     <aside className="sidebar">
-      <div className="sidebar-logo">{t('brand.name')}</div>
+      <div className="sidebar-logo">
+        <img src={camtelLogo} alt="" className="sidebar-logo-img" />
+        {t('brand.name')}
+      </div>
       <nav className="sidebar-nav">
         {links.map((l) => (
           <Link

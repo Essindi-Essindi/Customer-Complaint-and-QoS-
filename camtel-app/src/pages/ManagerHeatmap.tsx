@@ -4,15 +4,17 @@ import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { CameroonHeatMap } from '../components/CameroonHeatMap';
 import { analyticsApi, ApiError } from '../lib/api';
-import type { HeatMapResponse } from '../lib/api';
+import type { HeatMapResponse, RegionTotalResponse } from '../lib/api';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 import { useI18n } from '../context/I18nContext';
 
-// GET /api/analytics/heatmap requires start/end (LocalDate) and returns
-// HeatMapResponse rows: region, city, complaintCount. There's no
-// type/service-line breakdown per region on the backend, so the old
-// "breakdown panel" with fake percentages is gone — this just renders what
-// the endpoint actually returns.
+const PAGE_SIZE = 10;
+
+// GET /api/analytics/heatmap/regions (unpaginated, always every region —
+// feeds the map) and GET /api/analytics/heatmap (paginated region+city rows
+// — feeds the "by city" table) both take the same start/end/serviceType
+// filters and are always fetched together, so the map and table can never
+// show data from two different filter states.
 function defaultStart() {
   const d = new Date();
   d.setDate(d.getDate() - 30);
@@ -27,7 +29,18 @@ export default function ManagerHeatmap() {
   const [serviceType, setServiceType] = useState<ServiceTypeValue | ''>('');
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
+  // '' means the table's default order (most complaints first) — the sort
+  // itself happens on the backend, ahead of pagination, so "sort by region"
+  // actually groups same-region rows together across pages instead of just
+  // reordering whatever page happened to load.
+  const [sortBy, setSortBy] = useState<'' | 'region' | 'city'>('');
+
+  const [regionTotals, setRegionTotals] = useState<RegionTotalResponse[]>([]);
   const [rows, setRows] = useState<HeatMapResponse[]>([]);
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -37,33 +50,44 @@ export default function ManagerHeatmap() {
   const load = (opts: { silent?: boolean } = {}) => {
     if (!opts.silent) setLoading(true);
     setError('');
-    analyticsApi
-      .heatMap(start, end, serviceType || undefined)
-      .then(setRows)
+    Promise.all([
+      analyticsApi.regionTotals(start, end, serviceType || undefined),
+      analyticsApi.heatMap(start, end, serviceType || undefined, sortBy || undefined, page, PAGE_SIZE),
+    ])
+      .then(([regions, cityPage]) => {
+        setRegionTotals(regions);
+        setRows(cityPage.content);
+        setTotalPages(cityPage.totalPages);
+        setTotalElements(cityPage.totalElements);
+      })
       .catch((err) => setError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
       .finally(() => {
         if (!opts.silent) setLoading(false);
       });
   };
 
-  // Reloads whenever a filter changes, then keeps polling in the background
-  // so the map reflects newly-submitted complaints without the manager
-  // having to hit Apply again.
+  // Reloads whenever a filter or the table page changes, then keeps polling
+  // in the background so the map/table reflect newly-submitted complaints
+  // without the manager having to hit Apply again.
   useEffect(() => {
     load();
     const id = setInterval(() => load({ silent: true }), 30000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [start, end, serviceType]);
+  }, [start, end, serviceType, sortBy, page]);
 
   const handleApply = (ev: FormEvent) => {
     ev.preventDefault();
+    setPage(0); // a new filter invalidates whatever page we were on
     load();
   };
 
-  // Aggregate per region for the map shading; city breakdown shown below.
-  const byRegion = new Map<string, number>();
-  for (const r of rows) byRegion.set(r.region, (byRegion.get(r.region) || 0) + r.complaintCount);
+  const handleSortChange = (value: '' | 'region' | 'city') => {
+    setSortBy(value);
+    setPage(0);
+  };
+
+  const byRegion = new Map<string, number>(regionTotals.map((r) => [r.region, r.complaintCount]));
 
   return (
     <div className="staff-layout">
@@ -93,13 +117,26 @@ export default function ManagerHeatmap() {
 
           {loading ? (
             <p>{t('common.loading')}</p>
-          ) : rows.length === 0 ? (
+          ) : regionTotals.length === 0 ? (
             <div className="empty-state">{t('heatmap.empty')}</div>
           ) : (
             <>
               <CameroonHeatMap counts={byRegion} />
 
-              <h2 style={{ marginTop: 24 }}>{t('heatmap.byCity')}</h2>
+              <div className="page-title-row" style={{ marginTop: 24 }}>
+                <h2>{t('heatmap.byCity')}</h2>
+                <label className="sort-by-label">
+                  {t('heatmap.sortBy')}{' '}
+                  <select
+                    value={sortBy}
+                    onChange={(e) => handleSortChange(e.target.value as '' | 'region' | 'city')}
+                  >
+                    <option value="">{t('heatmap.sortByCount')}</option>
+                    <option value="region">{t('common.region')}</option>
+                    <option value="city">{t('common.city')}</option>
+                  </select>
+                </label>
+              </div>
               <div className="table-wrap">
                 <table className="data-table">
                   <thead>
@@ -110,18 +147,38 @@ export default function ManagerHeatmap() {
                     </tr>
                   </thead>
                   <tbody>
-                    {rows
-                      .slice()
-                      .sort((a, b) => b.complaintCount - a.complaintCount)
-                      .map((r, i) => (
-                        <tr key={i}>
-                          <td>{r.region}</td>
-                          <td>{r.city || '—'}</td>
-                          <td>{r.complaintCount}</td>
-                        </tr>
-                      ))}
+                    {rows.map((r, i) => (
+                      <tr key={i}>
+                        <td>{r.region}</td>
+                        <td>{r.city || '—'}</td>
+                        <td>{r.complaintCount}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+              </div>
+
+              <div className="pagination-bar">
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  disabled={page === 0}
+                  onClick={() => setPage((p) => Math.max(0, p - 1))}
+                >
+                  {t('dashboard.previous')}
+                </button>
+                <span>
+                  {t('dashboard.pageLabel')} {totalPages === 0 ? 0 : page + 1} {t('dashboard.ofLabel')}{' '}
+                  {totalPages} ({totalElements})
+                </span>
+                <button
+                  type="button"
+                  className="btn btn-outline btn-sm"
+                  disabled={page + 1 >= totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                >
+                  {t('dashboard.next')}
+                </button>
               </div>
             </>
           )}

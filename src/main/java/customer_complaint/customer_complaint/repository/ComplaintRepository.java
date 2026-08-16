@@ -21,6 +21,8 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
     // Enforces duplicate-submission protection at the query level
     Optional<Complaint> findByIdempotencyKey(String idempotencyKey);
 
+    Optional<Complaint> findByTicketNumber(String ticketNumber);
+
     List<Complaint> findBySubscriberId(Long subscriberId);
 
     List<Complaint> findByAgentId(Long agentId);

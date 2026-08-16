@@ -48,12 +48,17 @@ type EditForm = {
   department: string;
 };
 
+const PAGE_SIZE = 20;
+
 export default function ManagerUsers() {
   const { t, lang } = useI18n();
   const [users, setUsers] = useState<UserResponse[]>([]);
   // Defaults to AGENT since that's who a manager is managing day to day;
   // "All Roles" is still one select away.
   const [roleFilter, setRoleFilter] = useState<Role | ''>('AGENT');
+  const [page, setPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -80,13 +85,22 @@ export default function ManagerUsers() {
   const refresh = () => {
     setLoading(true);
     usersApi
-      .list(roleFilter || undefined)
-      .then(setUsers)
+      .list(roleFilter || undefined, page, PAGE_SIZE)
+      .then((res) => {
+        setUsers(res.content);
+        setTotalPages(res.totalPages);
+        setTotalElements(res.totalElements);
+      })
       .catch((err) => setError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
       .finally(() => setLoading(false));
   };
 
-  useEffect(refresh, [roleFilter, t]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(refresh, [roleFilter, page, t]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleRoleFilterChange = (value: Role | '') => {
+    setRoleFilter(value);
+    setPage(0); // a new filter invalidates whatever page we were on
+  };
 
   const openCreate = () => {
     setCreateForm(emptyCreateForm);
@@ -214,7 +228,7 @@ export default function ManagerUsers() {
           </div>
 
           <div className="filters-bar">
-            <select value={roleFilter} onChange={(e) => setRoleFilter(e.target.value as Role | '')}>
+            <select value={roleFilter} onChange={(e) => handleRoleFilterChange(e.target.value as Role | '')}>
               <option value="">{t('users.allRoles')}</option>
               <option value="SUBSCRIBER">{t('users.subscriber')}</option>
               <option value="AGENT">{t('role.agent')}</option>
@@ -227,6 +241,7 @@ export default function ManagerUsers() {
           {loading ? (
             <p>{t('common.loading')}</p>
           ) : (
+            <>
             <div className="table-wrap">
               <table className="data-table">
                 <thead>
@@ -276,6 +291,30 @@ export default function ManagerUsers() {
                 </tbody>
               </table>
             </div>
+
+            <div className="pagination-bar">
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={page === 0}
+                onClick={() => setPage((p) => Math.max(0, p - 1))}
+              >
+                {t('dashboard.previous')}
+              </button>
+              <span>
+                {t('dashboard.pageLabel')} {totalPages === 0 ? 0 : page + 1} {t('dashboard.ofLabel')} {totalPages} (
+                {totalElements})
+              </span>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                disabled={page + 1 >= totalPages}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                {t('dashboard.next')}
+              </button>
+            </div>
+            </>
           )}
         </main>
       </div>

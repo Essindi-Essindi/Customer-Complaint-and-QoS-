@@ -3,8 +3,12 @@ package customer_complaint.customer_complaint.controller;
 import customer_complaint.customer_complaint.dto.response.HeatMapResponse;
 import customer_complaint.customer_complaint.dto.response.KpiResponse;
 import customer_complaint.customer_complaint.dto.response.RecurringPatternResponse;
+import customer_complaint.customer_complaint.dto.response.RegionTotalResponse;
 import customer_complaint.customer_complaint.service.AnalyticsService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -22,12 +26,30 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
+    // Paginated region+city breakdown — the heatmap page's "by city" table.
+    // sortBy: "region", "city", or omitted/anything else for complaintCount
+    // descending (the default).
     @GetMapping("/heatmap")
-    public ResponseEntity<List<HeatMapResponse>> heatMap(
+    public ResponseEntity<Page<HeatMapResponse>> heatMap(
+            @RequestParam(required = false) String serviceType,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end,
+            @RequestParam(required = false) String sortBy,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return ResponseEntity.ok(analyticsService.getHeatMap(serviceType, start, end, sortBy, pageable));
+    }
+
+    // Every region's total, unpaginated — the heatmap page's map shading,
+    // which needs the true total regardless of which page of the city
+    // table above is currently showing.
+    @GetMapping("/heatmap/regions")
+    public ResponseEntity<List<RegionTotalResponse>> regionTotals(
             @RequestParam(required = false) String serviceType,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate start,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate end) {
-        return ResponseEntity.ok(analyticsService.getHeatMap(serviceType, start, end));
+        return ResponseEntity.ok(analyticsService.getRegionTotals(serviceType, start, end));
     }
 
     @GetMapping("/kpis")

@@ -2,6 +2,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from './SettingsControls';
+import camtelLogo from '../assets/camtel-logo.png';
 
 export function SubscriberNav() {
   const { name, logout } = useAuth();
@@ -15,7 +16,10 @@ export function SubscriberNav() {
 
   return (
     <header className="top-nav">
-      <div className="nav-logo">{t('brand.name')}</div>
+      <div className="nav-logo">
+        <img src={camtelLogo} alt="" className="nav-logo-img" />
+        {t('brand.name')}
+      </div>
       <div className="nav-center">{name || 'Subscriber'}</div>
       <div className="nav-actions">
         <Link to="/my-complaints" className="nav-link">

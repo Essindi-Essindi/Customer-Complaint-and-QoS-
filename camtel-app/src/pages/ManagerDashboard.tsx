@@ -8,17 +8,17 @@ import { StatusBadge } from '../components/StatusBadge';
 import {
   analyticsApi,
   agentComplaintsApi,
-  complaintsApi,
   managerComplaintsApi,
   ApiError,
 } from '../lib/api';
 import type {
   KpiResponse,
   RecurringPatternResponse,
-  ComplaintResponse,
+  ComplaintStaffDetailResponse,
   ComplaintManagerListItemResponse,
   AgentWithLoadResponse,
 } from '../lib/api';
+import { OTHER } from '../lib/cameroonLocations';
 import {
   COMPLAINT_STATUSES,
   COMPLAINT_TYPES,
@@ -68,8 +68,12 @@ export default function ManagerDashboard() {
   });
 
   // ── Modal / detail ────────────────────────────────────────────────────────
-  const [found, setFound] = useState<ComplaintResponse | null>(null);
-  const [foundRow, setFoundRow] = useState<ComplaintManagerListItemResponse | null>(null);
+  // Always fetched fresh via agentComplaintsApi.getByTicket() (city,
+  // locality, description, sender name/email/phone, assigned agent — the
+  // full picture) rather than reused from the list row, so a direct ticket
+  // lookup (no row involved at all) shows exactly the same detail as
+  // opening one from the table.
+  const [found, setFound] = useState<ComplaintStaffDetailResponse | null>(null);
   const [modalError, setModalError] = useState('');
   const [status, setStatus] = useState<ComplaintStatusValue>('SUBMITTED');
   const [note, setNote] = useState('');
@@ -137,27 +141,19 @@ export default function ManagerDashboard() {
         .finally(() => setAgentsLoading(false));
   };
 
-  const openModal = async (
-      row: ComplaintManagerListItemResponse | null,
-      ticketNumber?: string
-  ) => {
+  const openModal = async (ticketNumber: string) => {
     setModalError('');
     setAssignError('');
     setSelectedAgentId(null);
     setConfirmAssign(false);
     setFound(null);
-    setFoundRow(row);
-
-    const ticket = ticketNumber ?? row?.ticketNumber;
-    if (!ticket) return;
 
     try {
-      const c = await complaintsApi.track(ticket);
+      const c = await agentComplaintsApi.getByTicket(ticketNumber);
       setFound(c);
       setStatus(c.status);
       setNote('');
-      const svc = c.serviceType || row?.serviceType;
-      if (svc) loadAgents(svc);
+      if (c.serviceType) loadAgents(c.serviceType);
     } catch (err) {
       setModalError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
     }
@@ -165,7 +161,6 @@ export default function ManagerDashboard() {
 
   const closeModal = () => {
     setFound(null);
-    setFoundRow(null);
     setAgents([]);
     setSelectedAgentId(null);
     setConfirmAssign(false);
@@ -199,7 +194,7 @@ export default function ManagerDashboard() {
     setLookupError('');
     setLooking(true);
     try {
-      await openModal(null, lookupTicket.trim());
+      await openModal(lookupTicket.trim());
     } catch (err) {
       setLookupError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
     } finally {
@@ -212,11 +207,15 @@ export default function ManagerDashboard() {
     setSaving(true);
     setModalError('');
     try {
-      const updated = await agentComplaintsApi.updateStatus(found.id, {
+      await agentComplaintsApi.updateStatus(found.id, {
         newStatus: status,
         resolutionNote: note.trim() || undefined,
       });
-      setFound(updated);
+      // updateStatus() only returns the lean ComplaintResponse shape — refetch
+      // the full staff detail so `found` stays fully populated (sender,
+      // locality, description) rather than narrowing after a save.
+      const refreshed = await agentComplaintsApi.getByTicket(found.ticketNumber);
+      setFound(refreshed);
       setToast(t('common.updateSaved'));
       loadRows();
     } catch (err) {
@@ -237,8 +236,7 @@ export default function ManagerDashboard() {
       setSelectedAgentId(null);
       loadRows();
       // Refresh agent load counts in the dropdown
-      const svc = found.serviceType || foundRow?.serviceType;
-      if (svc) loadAgents(svc);
+      if (found.serviceType) loadAgents(found.serviceType);
     } catch (err) {
       setAssignError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
     } finally {
@@ -399,7 +397,7 @@ export default function ManagerDashboard() {
                               <button
                                   type="button"
                                   className="btn btn-outline btn-sm"
-                                  onClick={() => openModal(row)}
+                                  onClick={() => openModal(row.ticketNumber)}
                               >
                                 {t('dashboard.view')}
                               </button>
@@ -467,8 +465,16 @@ export default function ManagerDashboard() {
                 </div>
                 <div>
                   <strong>{t('common.location')}</strong>
-                  <div>{found.city}, {found.region}</div>
+                  <div>
+                    {found.city === OTHER ? t('submit.otherNotListed') : found.city}, {found.region}
+                  </div>
                 </div>
+                {found.locality && (
+                  <div>
+                    <strong>{t('submit.locality')}</strong>
+                    <div>{found.locality === OTHER ? t('submit.otherNotListed') : found.locality}</div>
+                  </div>
+                )}
                 <div>
                   <strong>{t('common.service')}</strong>
                   <div>
@@ -477,7 +483,21 @@ export default function ManagerDashboard() {
                 </div>
                 <div>
                   <strong>{t('common.assignedAgent')}</strong>
-                  <div>{foundRow?.assignedAgentName ?? t('dashboard.unassigned')}</div>
+                  <div>{found.assignedAgentName ?? t('dashboard.unassigned')}</div>
+                </div>
+                <div>
+                  <strong>{t('common.sender')}</strong>
+                  <div>{found.subscriberName ?? '—'}</div>
+                </div>
+                {(found.subscriberEmail || found.subscriberPhone) && (
+                  <div>
+                    <strong>{t('common.contact')}</strong>
+                    <div>{[found.subscriberEmail, found.subscriberPhone].filter(Boolean).join(' · ')}</div>
+                  </div>
+                )}
+                <div className="full">
+                  <strong>{t('common.description')}</strong>
+                  <div>{found.description || t('detail.noDescription')}</div>
                 </div>
               </div>
 

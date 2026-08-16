@@ -61,6 +61,12 @@ public class Complaint {
     @Column(length = 100)
     private String city;
 
+    // Neighborhood/quarter within city — optional (not every city has a
+    // curated locality list, and the subscriber can pick "Other" here even
+    // when it does), so unlike region/city this is never required.
+    @Column(length = 100)
+    private String locality;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private ComplaintStatus status = ComplaintStatus.SUBMITTED;

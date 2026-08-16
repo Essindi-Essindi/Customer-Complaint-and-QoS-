@@ -32,8 +32,11 @@ export default function InternalLogin() {
     setLoading(true);
     try {
       const data = await authApi.login({ identifier: email.trim(), password });
+      // Same reasoning as Login.tsx's mirror-image check: generic wording
+      // only, so this can't be used to probe whether an identifier belongs
+      // to a subscriber account.
       if (data.role === 'SUBSCRIBER') {
-        setError(t('internal.wrongPortal'));
+        setError(t('common.invalidCredentials'));
         return;
       }
       login(data);

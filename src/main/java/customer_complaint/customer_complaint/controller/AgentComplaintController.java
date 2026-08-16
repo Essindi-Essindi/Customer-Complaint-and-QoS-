@@ -3,6 +3,7 @@ package customer_complaint.customer_complaint.controller;
 import customer_complaint.customer_complaint.dto.request.ComplaintStatusUpdateRequest;
 import customer_complaint.customer_complaint.dto.response.ComplaintListItemResponse;
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
+import customer_complaint.customer_complaint.dto.response.ComplaintStaffDetailResponse;
 import customer_complaint.customer_complaint.model.Agent;
 import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.security.CustomUserDetails;
@@ -28,6 +29,17 @@ public class AgentComplaintController {
     @GetMapping("/assigned")
     public ResponseEntity<List<ComplaintListItemResponse>> viewAssigned(@AuthenticationPrincipal CustomUserDetails principal) {
         return ResponseEntity.ok(complaintService.listForAgent(principal.getUser().getId()));
+    }
+
+    // Full detail (sender name/email/phone, city, locality, description,
+    // assigned agent) for the "view" modal on both the agent complaints
+    // page and the manager dashboard's row-view/ticket-lookup — the class-level
+    // hasAnyRole('AGENT', 'MANAGER') above already covers both. Not the same
+    // response as GET /api/complaints/track/{ticketNumber}, which is public
+    // and therefore never carries subscriber PII.
+    @GetMapping("/by-ticket/{ticketNumber}")
+    public ResponseEntity<ComplaintStaffDetailResponse> getByTicket(@PathVariable String ticketNumber) {
+        return ResponseEntity.ok(complaintService.getStaffDetailByTicket(ticketNumber));
     }
 
     // All complaints for the service the logged-in agent is assigned to.
