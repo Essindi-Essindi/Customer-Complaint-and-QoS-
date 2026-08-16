@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
@@ -12,19 +12,28 @@ import { useI18n } from '../context/I18nContext';
 // ReportResponse right away — the PDF itself is built asynchronously (via
 // RabbitMQ) and filePath stays null until it's ready, so GET
 // /{id}/download can 409 with "still generating" if you're too quick.
-// There is no GET endpoint that lists past reports, so "report history"
-// here is just what's been generated in this browser session — it won't
-// survive a refresh, and that's a real backend gap, not a frontend bug.
+// GET /api/reports returns this manager's full history (newest first), so
+// it survives a refresh/new session instead of only showing what got
+// generated in the current page load.
 export default function ManagerReports() {
   const { t } = useI18n();
   const [reportType, setReportType] = useState<ReportTypeValue>('WEEKLY');
   const [start, setStart] = useState('');
   const [end, setEnd] = useState('');
   const [loading, setLoading] = useState(false);
+  const [historyLoading, setHistoryLoading] = useState(true);
   const [error, setError] = useState('');
   const [history, setHistory] = useState<ReportResponse[]>([]);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [toast, setToast] = useState<string | null>(null);
+
+  useEffect(() => {
+    reportsApi
+      .list()
+      .then(setHistory)
+      .catch((err) => setError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
+      .finally(() => setHistoryLoading(false));
+  }, [t]);
 
   const handleGenerate = async (ev: FormEvent) => {
     ev.preventDefault();
@@ -105,8 +114,9 @@ export default function ManagerReports() {
           {error && <div className="banner error">{error}</div>}
 
           <h2 style={{ marginTop: 32 }}>{t('reports.reportHistory')}</h2>
-          <p className="hint">{t('reports.sessionOnlyHint')}</p>
-          {history.length === 0 ? (
+          {historyLoading ? (
+            <p>{t('common.loading')}</p>
+          ) : history.length === 0 ? (
             <div className="empty-state">{t('reports.noneYet')}</div>
           ) : (
             <div className="table-wrap">

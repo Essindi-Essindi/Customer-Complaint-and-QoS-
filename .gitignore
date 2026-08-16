@@ -32,6 +32,20 @@ build/
 ### VS Code ###
 .vscode/
 
+### camtel-app (frontend) ###
+# Both regenerate with a single command (npm install / npm run build) and
+# don't belong in git — node_modules alone was previously ~7800 tracked
+# files. /dist/ above only anchors to the repo root, so it never actually
+# caught camtel-app/dist; this unanchored rule catches it (and any other
+# nested dist/) explicitly.
+node_modules/
+camtel-app/dist/
+
+### Generated report PDFs ###
+# report.storage-dir in application.properties — written at runtime, not
+# source.
+/reports/
+
 ### Environment secrets ###
 # Every .env (backend and camtel-app/.env alike) holds real credentials and
 # must never be committed — each clone/branch needs its own copy, added back

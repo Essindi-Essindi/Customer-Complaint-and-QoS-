@@ -10,10 +10,10 @@ import { COMPLAINT_STATUSES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '
 import { ChevronLeftIcon } from '../components/icons';
 
 // GET /api/complaints/track/{ticketNumber} returns the full ComplaintResponse:
-// id, ticketNumber, type, serviceType, region, city, status, createdAt,
-// updatedAt. The backend does NOT return a resolution note, assigned agent
-// name, rating, or an audit trail on this (or any) endpoint, so none of that
-// is shown here — showing it would just be inventing data.
+// id, ticketNumber, type, serviceType, region, city, description, status,
+// createdAt, updatedAt. The backend does NOT return a resolution note,
+// assigned agent name, rating, or an audit trail on this (or any) endpoint,
+// so none of that is shown here — showing it would just be inventing data.
 export default function ComplaintDetail() {
   const { ticketNumber } = useParams<{ ticketNumber: string }>();
   const { t, lang } = useI18n();
@@ -125,6 +125,13 @@ export default function ComplaintDetail() {
             </div>
           </div>
         </div>
+
+        {complaint.description && (
+          <div className="detail-description">
+            <strong>{t('common.description')}</strong>
+            <p>{complaint.description}</p>
+          </div>
+        )}
 
         <div className="progress-steps">
           {COMPLAINT_STATUSES.map((step, i) => (

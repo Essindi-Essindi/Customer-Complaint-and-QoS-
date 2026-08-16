@@ -8,6 +8,7 @@ import customer_complaint.customer_complaint.dto.response.ComplaintManagerListIt
 import customer_complaint.customer_complaint.dto.response.ComplaintResponse;
 import customer_complaint.customer_complaint.exception.ResourceNotFoundException;
 import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.model.CameroonLocations;
 import customer_complaint.customer_complaint.model.Category;
 import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Subscriber;
@@ -54,6 +55,8 @@ public class ComplaintServiceImpl implements ComplaintService {
 
         Subscriber subscriber = (Subscriber) userRepository.findById(subscriberId)
                 .orElseThrow(() -> new ResourceNotFoundException("Subscriber not found"));
+
+        validateLocation(request.getRegion(), request.getCity());
 
         Complaint complaint = new Complaint();
         complaint.setIdempotencyKey(request.getIdempotencyKey());
@@ -222,6 +225,23 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
     }
 
+    // Keeps region/city homogeneous in the database — both are free-text
+    // columns, but every value that actually reaches the DB must come from
+    // CameroonLocations' closed list (the same list the frontend's
+    // region -> city cascading dropdown is built from), or the heatmap's
+    // per-region grouping would silently fragment on spelling variants.
+    private void validateLocation(String region, String city) {
+        if (!CameroonLocations.isValidRegion(region)) {
+            throw new IllegalArgumentException(
+                    "Invalid region '" + region + "'. Valid values: " + CameroonLocations.townsByRegion().keySet());
+        }
+        if (!CameroonLocations.isValidCityForRegion(region, city)) {
+            throw new IllegalArgumentException(
+                    "Invalid city '" + city + "' for region '" + region + "'. Valid values: "
+                            + CameroonLocations.townsByRegion().get(region));
+        }
+    }
+
     private ComplaintStatus parseStatus(String raw) {
         try {
             return ComplaintStatus.valueOf(raw.toUpperCase());
@@ -233,8 +253,8 @@ public class ComplaintServiceImpl implements ComplaintService {
 
     private ComplaintResponse toResponse(Complaint c) {
         return new ComplaintResponse(c.getId(), c.getTicketNumber(), c.getType(),
-                c.getServiceType().name(), c.getRegion(), c.getCity(), c.getStatus().name(),
-                c.getCreatedAt(), c.getUpdatedAt());
+                c.getServiceType().name(), c.getRegion(), c.getCity(), c.getDescription(),
+                c.getStatus().name(), c.getCreatedAt(), c.getUpdatedAt());
     }
 
     private ComplaintListItemResponse toListItem(Complaint c) {

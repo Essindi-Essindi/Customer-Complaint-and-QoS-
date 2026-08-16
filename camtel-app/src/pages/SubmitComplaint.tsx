@@ -12,6 +12,7 @@ import {
   SERVICE_TYPE_LABELS,
   type ServiceTypeValue,
 } from '../lib/constants';
+import { TOWNS_BY_REGION } from '../lib/cameroonLocations';
 
 // Fields map 1:1 to dto/request/ComplaintSubmissionRequest.java:
 // idempotencyKey, type, serviceType, region, city, description, categoryId.
@@ -57,13 +58,20 @@ export default function SubmitComplaint() {
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
+  // Changing region invalidates whatever city was picked for the old one —
+  // TOWNS_BY_REGION's lists don't overlap, so the previous city is never
+  // valid for a newly-picked region.
+  const setRegion = (region: string) => setForm((f) => ({ ...f, region, city: '' }));
+
+  const cityOptions = form.region ? TOWNS_BY_REGION[form.region] ?? [] : [];
+
   const validate = () => {
     const e: Record<string, string> = {};
     if (!captchaToken) e.captcha = t('validation.required');
     if (!form.categoryId) e.categoryId = t('validation.required');
     if (!form.serviceType) e.serviceType = t('validation.required');
     if (!form.region) e.region = t('validation.required');
-    if (!form.city.trim()) e.city = t('validation.required');
+    if (!form.city) e.city = t('validation.required');
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -83,7 +91,7 @@ export default function SubmitComplaint() {
         categoryId: selectedCategory?.id,
         serviceType: form.serviceType as ServiceTypeValue,
         region: form.region,
-        city: form.city.trim(),
+        city: form.city,
         description: form.description.trim() || undefined,
         captchaToken,
       });
@@ -151,7 +159,7 @@ export default function SubmitComplaint() {
 
           <div className={`field ${errors.region ? 'error' : ''}`}>
             <label>{t('common.region')}</label>
-            <select value={form.region} onChange={(e) => set('region', e.target.value)}>
+            <select value={form.region} onChange={(e) => setRegion(e.target.value)}>
               <option value="">{t('register.selectEllipsis')}</option>
               {REGIONS.map((r) => (
                 <option key={r}>{r}</option>
@@ -162,7 +170,18 @@ export default function SubmitComplaint() {
 
           <div className={`field ${errors.city ? 'error' : ''}`}>
             <label>{t('common.city')}</label>
-            <input type="text" value={form.city} onChange={(e) => set('city', e.target.value)} />
+            <select
+              value={form.city}
+              onChange={(e) => set('city', e.target.value)}
+              disabled={!form.region}
+            >
+              <option value="">
+                {form.region ? t('register.selectEllipsis') : t('submit.pickRegionFirst')}
+              </option>
+              {cityOptions.map((c) => (
+                <option key={c}>{c}</option>
+              ))}
+            </select>
             {errors.city && <span className="field-error">{errors.city}</span>}
           </div>
 
@@ -174,6 +193,7 @@ export default function SubmitComplaint() {
               rows={4}
               value={form.description}
               onChange={(e) => set('description', e.target.value)}
+              placeholder={t('submit.descriptionPlaceholder')}
             />
           </div>
 

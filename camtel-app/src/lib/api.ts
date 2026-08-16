@@ -171,6 +171,7 @@ export interface ComplaintResponse {
   serviceType: string;
   region: string;
   city: string;
+  description: string | null;
   status: ComplaintStatusValue;
   createdAt: string;
   updatedAt: string | null;
@@ -290,6 +291,9 @@ export interface ReportResponse {
 export const reportsApi = {
   generate: (data: ReportGenerationRequest) =>
       request<ReportResponse>('/reports', { method: 'POST', body: data }),
+  // Full history for this manager, newest first — not just what's been
+  // generated in the current browser session.
+  list: () => request<ReportResponse[]>('/reports'),
   // Binary download — needs the Authorization header attached manually since
   // this isn't a JSON request/response.
   download: async (reportId: number): Promise<Blob> => {

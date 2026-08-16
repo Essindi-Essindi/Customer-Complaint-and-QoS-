@@ -231,6 +231,11 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'submit.confirmedPrefix': { en: 'Complaint submitted. Your ticket number is', fr: 'Plainte soumise. Votre numéro de ticket est' },
   'submit.complaintType': { en: 'Complaint type', fr: 'Type de plainte' },
   'submit.affectedService': { en: 'Affected service', fr: 'Service concerné' },
+  'submit.pickRegionFirst': { en: 'Pick a region first', fr: "Choisissez d'abord une région" },
+  'submit.descriptionPlaceholder': {
+    en: 'Enter your locality to give us more details (e.g. street, landmark, quarter block)',
+    fr: 'Indiquez votre localité pour nous donner plus de détails (rue, repère, quartier précis)',
+  },
   'submit.optional': { en: '(optional)', fr: '(facultatif)' },
   'submit.submitting': { en: 'Submitting…', fr: 'Envoi…' },
   'submit.submitComplaint': { en: 'Submit Complaint', fr: 'Déposer une plainte' },
@@ -282,6 +287,10 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'heatmap.empty': { en: 'No data for the selected period', fr: 'Aucune donnée pour la période sélectionnée' },
   'heatmap.complaints': { en: 'complaints', fr: 'plaintes' },
   'heatmap.byCity': { en: 'By city', fr: 'Par ville' },
+  'heatmap.mapAriaLabel': {
+    en: 'Map of Cameroon shaded by complaint count per region',
+    fr: 'Carte du Cameroun colorée selon le nombre de plaintes par région',
+  },
 
   // KPIs
   'kpis.groupByPrefix': { en: 'Group by:', fr: 'Grouper par :' },
@@ -299,10 +308,6 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'reports.generated': { en: 'Report generation started', fr: 'Génération du rapport démarrée' },
   'reports.weekly': { en: 'Weekly', fr: 'Hebdomadaire' },
   'reports.monthly': { en: 'Monthly', fr: 'Mensuel' },
-  'reports.sessionOnlyHint': {
-    en: "The backend doesn't keep a report history — this list only reflects reports generated in this browser session.",
-    fr: "Le serveur ne conserve pas d’historique — cette liste ne reflète que les rapports générés dans cette session.",
-  },
   'reports.noneYet': { en: 'No reports generated in this session yet', fr: 'Aucun rapport généré dans cette session' },
   'reports.downloadPdf': { en: 'Download PDF', fr: 'Télécharger le PDF' },
 

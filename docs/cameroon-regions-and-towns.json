@@ -1,0 +1,131 @@
+{
+  "_readme": "Reference dataset for Cameroon's administrative divisions, compiled for this project so region/city values entered anywhere in the app (complaint submission, agent/manager assignment, the heatmap) stay homogeneous instead of drifting into free-typed spelling variants. The app's actual source of truth for validation is code, not this file: camtel-app/src/lib/cameroonLocations.ts (frontend dropdown) and src/main/java/.../model/CameroonLocations.java (backend validation) — both hold the same region -> town list as this file's \"capital\" fields, kept in sync by hand. This file additionally carries the full department list and 2005-census population per department, which the app code doesn't need but is useful context if the town list ever needs extending.",
+  "sources": [
+    "https://en.wikipedia.org/wiki/Regions_of_Cameroon",
+    "https://en.wikipedia.org/wiki/Departments_of_Cameroon",
+    "https://www.citypopulation.de/en/cameroon/admin/",
+    "https://www.geoboundaries.org (CMR ADM1 boundaries, used for the heatmap's SVG map — see camtel-app/src/data/cameroon-region-paths.json)"
+  ],
+  "regionCount": 10,
+  "departmentCount": 58,
+  "regions": [
+    {
+      "region": "Adamaoua",
+      "capital": "Ngaoundéré",
+      "departments": [
+        { "name": "Djérem", "capital": "Tibati", "population2005": 124948 },
+        { "name": "Faro-et-Déo", "capital": "Tignère", "population2005": 82717 },
+        { "name": "Mayo-Banyo", "capital": "Banyo", "population2005": 187066 },
+        { "name": "Mbéré", "capital": "Meiganga", "population2005": 171670 },
+        { "name": "Vina", "capital": "Ngaoundéré", "population2005": 317888 }
+      ]
+    },
+    {
+      "region": "Centre",
+      "capital": "Yaoundé",
+      "departments": [
+        { "name": "Haute-Sanaga", "capital": "Nanga-Eboko", "population2005": 100352 },
+        { "name": "Lekié", "capital": "Monatélé", "population2005": 286050 },
+        { "name": "Mbam-et-Inoubou", "capital": "Bafia", "population2005": 188927 },
+        { "name": "Mbam-et-Kim", "capital": "Ntui", "population2005": 105511 },
+        { "name": "Méfou-et-Afamba", "capital": "Mfou", "population2005": 126025 },
+        { "name": "Méfou-et-Akono", "capital": "Ngoumou", "population2005": 59017 },
+        { "name": "Mfoundi", "capital": "Yaoundé", "population2005": 1881876 },
+        { "name": "Nyong-et-Kéllé", "capital": "Eséka", "population2005": 129819 },
+        { "name": "Nyong-et-Mfoumou", "capital": "Akonolinga", "population2005": 104507 },
+        { "name": "Nyong-et-So'o", "capital": "Mbalmayo", "population2005": 115960 }
+      ]
+    },
+    {
+      "region": "East",
+      "capital": "Bertoua",
+      "departments": [
+        { "name": "Boumba-et-Ngoko", "capital": "Yokadouma", "population2005": 115354 },
+        { "name": "Haut-Nyong", "capital": "Abong-Mbang", "population2005": 196519 },
+        { "name": "Kadey", "capital": "Batouri", "population2005": 184098 },
+        { "name": "Lom-et-Djérem", "capital": "Bertoua", "population2005": 275784 }
+      ]
+    },
+    {
+      "region": "Far North",
+      "capital": "Maroua",
+      "departments": [
+        { "name": "Diamaré", "capital": "Maroua", "population2005": 642227 },
+        { "name": "Logone-et-Chari", "capital": "Kousséri", "population2005": 486997 },
+        { "name": "Mayo-Danay", "capital": "Yagoua", "population2005": 529061 },
+        { "name": "Mayo-Kani", "capital": "Kaélé", "population2005": 404646 },
+        { "name": "Mayo-Sava", "capital": "Mora", "population2005": 348890 },
+        { "name": "Mayo-Tsanaga", "capital": "Mokolo", "population2005": 699971 }
+      ]
+    },
+    {
+      "region": "Littoral",
+      "capital": "Douala",
+      "departments": [
+        { "name": "Moungo", "capital": "Nkongsamba", "population2005": 379241 },
+        { "name": "Nkam", "capital": "Yabassi", "population2005": 36730 },
+        { "name": "Sanaga-Maritime", "capital": "Édéa", "population2005": 162315 },
+        { "name": "Wouri", "capital": "Douala", "population2005": 1931977 }
+      ]
+    },
+    {
+      "region": "North",
+      "capital": "Garoua",
+      "departments": [
+        { "name": "Bénoué", "capital": "Garoua", "population2005": 851955 },
+        { "name": "Faro", "capital": "Poli", "population2005": 69477 },
+        { "name": "Mayo-Louti", "capital": "Guider", "population2005": 391326 },
+        { "name": "Mayo-Rey", "capital": "Tcholliré", "population2005": 375201 }
+      ]
+    },
+    {
+      "region": "North West",
+      "capital": "Bamenda",
+      "departments": [
+        { "name": "Boyo", "capital": "Fundong", "population2005": 124887 },
+        { "name": "Bui", "capital": "Kumbo", "population2005": 321969 },
+        { "name": "Donga-Mantung", "capital": "Nkambe", "population2005": 269931 },
+        { "name": "Menchum", "capital": "Wum", "population2005": 161998 },
+        { "name": "Mezam", "capital": "Bamenda", "population2005": 524127 },
+        { "name": "Momo", "capital": "Mbengwi", "population2005": 138693 },
+        { "name": "Ngo-Ketunjia", "capital": "Ndop", "population2005": 187348 }
+      ]
+    },
+    {
+      "region": "South",
+      "capital": "Ebolowa",
+      "departments": [
+        { "name": "Dja-et-Lobo", "capital": "Sangmélima", "population2005": 196951 },
+        { "name": "Mvila", "capital": "Ebolowa", "population2005": 179429 },
+        { "name": "Océan", "capital": "Kribi", "population2005": 179093 },
+        { "name": "Vallée-du-Ntem", "capital": "Ambam", "population2005": 79182 }
+      ]
+    },
+    {
+      "region": "South West",
+      "capital": "Buea",
+      "departments": [
+        { "name": "Fako", "capital": "Limbé", "population2005": 466412, "note": "Buea, the region's own capital, also sits in Fako department" },
+        { "name": "Koupé-Manengouba", "capital": "Bangem", "population2005": 105579 },
+        { "name": "Lebialem", "capital": "Menji", "population2005": 113736 },
+        { "name": "Manyu", "capital": "Mamfe", "population2005": 181039 },
+        { "name": "Meme", "capital": "Kumba", "population2005": 326734 },
+        { "name": "Ndian", "capital": "Mundemba", "population2005": 122579 }
+      ]
+    },
+    {
+      "region": "West",
+      "capital": "Bafoussam",
+      "departments": [
+        { "name": "Bamboutos", "capital": "Mbouda", "population2005": 292410 },
+        { "name": "Haut-Nkam", "capital": "Bafang", "population2005": 144786 },
+        { "name": "Hauts-Plateaux", "capital": "Baham", "population2005": 80678 },
+        { "name": "Koung-Khi", "capital": "Bandjoun", "population2005": 65021 },
+        { "name": "Menoua", "capital": "Dschang", "population2005": 285764 },
+        { "name": "Mifi", "capital": "Bafoussam", "population2005": 301456 },
+        { "name": "Ndé", "capital": "Bangangté", "population2005": 94849 },
+        { "name": "Noun", "capital": "Foumban", "population2005": 455083 }
+      ]
+    }
+  ]
+}

@@ -257,9 +257,9 @@ a:hover {
 .empty-state,
 .modal,
 .detail-grid,
+.detail-description,
 .kpi-card,
 .breakdown-panel,
-.region-card,
 .chart-placeholder,
 .template-card {
   background: var(--card);
@@ -275,7 +275,6 @@ a:hover {
 .form-card::before,
 .modal::before,
 .kpi-card::before,
-.region-card::before,
 .template-card::before {
   content: '';
   position: absolute;
@@ -764,22 +763,6 @@ a:hover {
   box-shadow: 0 0 0 1px rgba(var(--tint), 0.1) inset, 0 0 16px -4px rgba(47, 143, 255, 0.5);
   font-weight: 600;
 }
-.sidebar-logout {
-  margin: 12px;
-  padding: 9px;
-  background: rgba(var(--tint), 0.04);
-  border: 1px solid var(--border-strong);
-  color: var(--text);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  font-family: inherit;
-  transition: background 0.2s var(--ease);
-}
-.sidebar-logout:hover {
-  background: rgba(255, 107, 107, 0.15);
-  border-color: rgba(255, 107, 107, 0.4);
-}
-
 .staff-main {
   flex: 1;
   display: flex;
@@ -816,6 +799,11 @@ a:hover {
 .staff-datetime {
   color: var(--muted);
   font-size: 0.85rem;
+}
+/* Pushes settings + logout to the header's right edge — same right-aligned
+   position as SubscriberNav's .nav-actions. */
+.staff-header-controls {
+  margin-left: auto;
 }
 
 .table-wrap {
@@ -980,7 +968,8 @@ a:hover {
 .detail-grid .full {
   grid-column: 1 / -1;
 }
-.detail-grid strong {
+.detail-grid strong,
+.detail-description strong {
   font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.04em;
@@ -988,6 +977,14 @@ a:hover {
   display: block;
   font-weight: 600;
   margin-bottom: 2px;
+}
+.detail-description {
+  padding: 20px;
+  margin-bottom: 20px;
+}
+.detail-description p {
+  white-space: pre-wrap;
+  line-height: 1.5;
 }
 
 .back-link {
@@ -1202,44 +1199,55 @@ a:hover {
   font-size: 0.95rem;
 }
 
-.region-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+/* Choropleth map of Cameroon's 10 regions — ManagerHeatmap.tsx. Region fills
+   are computed inline (per-count sequential-ramp color, from CameroonHeatMap.tsx)
+   since they're data-driven; this just handles layout, the hover/focus
+   affordance, and the legend strip. */
+.cameroon-map {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 12px;
+  padding: 20px;
   margin-bottom: 16px;
 }
-.region-card {
-  padding: 14px;
-  text-align: left;
-  cursor: pointer;
-  font-family: inherit;
-  color: var(--text);
+.cameroon-map-svg {
+  width: 100%;
+  max-width: 420px;
+  height: auto;
 }
-.region-card:hover {
-  border-color: var(--primary-light);
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lift);
+.cameroon-map-region {
+  stroke: var(--bg-0);
+  stroke-width: 1.5;
+  transition: opacity 0.15s var(--ease), stroke-width 0.15s var(--ease);
+  cursor: default;
 }
-.region-name {
-  font-weight: 600;
-  font-size: 0.9rem;
+.cameroon-map-region:hover,
+.cameroon-map-region:focus-visible {
+  opacity: 0.85;
+  stroke: var(--text);
+  stroke-width: 2.5;
+  outline: none;
 }
-.region-count {
-  font-size: 0.8rem;
+.cameroon-map-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  font-size: 0.78rem;
   color: var(--muted);
-  margin: 4px 0;
 }
-.density-bar {
-  height: 6px;
-  background: rgba(var(--tint), 0.08);
-  border-radius: 3px;
-  overflow: hidden;
+.cameroon-map-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.density-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--primary), var(--cyan));
+.cameroon-map-legend-swatch {
+  width: 14px;
+  height: 14px;
   border-radius: 3px;
-  transition: width 0.6s var(--ease);
+  border: 1px solid var(--border);
+  display: inline-block;
 }
 
 .notice {

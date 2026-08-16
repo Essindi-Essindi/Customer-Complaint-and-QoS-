@@ -196,6 +196,13 @@ public class ReportServiceImpl implements ReportService {
     }
 
     @Override
+    public List<ReportResponse> listForManager(Long managerId) {
+        return reportRepository.findByGeneratedByIdOrderByGeneratedAtDesc(managerId).stream()
+                .map(this::toResponse)
+                .toList();
+    }
+
+    @Override
     public Report getReportForDownload(Long reportId) {
         Report report = reportRepository.findById(reportId)
                 .orElseThrow(() -> new ResourceNotFoundException("Report not found"));

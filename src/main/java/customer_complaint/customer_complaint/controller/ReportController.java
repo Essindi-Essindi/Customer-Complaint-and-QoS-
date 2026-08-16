@@ -15,6 +15,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 // generate and download pdf reports
 @RestController
 @RequestMapping("/api/reports")
@@ -28,6 +30,13 @@ public class ReportController {
     public ResponseEntity<ReportResponse> generate(@AuthenticationPrincipal CustomUserDetails principal,
                                                    @Valid @RequestBody ReportGenerationRequest request) {
         return ResponseEntity.ok(reportService.requestGeneration(principal.getUser().getId(), request));
+    }
+
+    // Full history, not just what this browser session happened to generate
+    // — newest first (see ReportRepository.findByGeneratedByIdOrderByGeneratedAtDesc).
+    @GetMapping
+    public ResponseEntity<List<ReportResponse>> list(@AuthenticationPrincipal CustomUserDetails principal) {
+        return ResponseEntity.ok(reportService.listForManager(principal.getUser().getId()));
     }
 
     @GetMapping("/{reportId}/download")

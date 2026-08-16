@@ -1,21 +1,15 @@
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Link, useLocation } from 'react-router-dom';
 import { useI18n } from '../context/I18nContext';
 
 interface Props {
   variant: 'agent' | 'manager';
 }
 
+// Logout lives in StaffHeader now (top, same position as SubscriberNav's),
+// not here — see StaffHeader.tsx.
 export function StaffSidebar({ variant }: Props) {
   const location = useLocation();
-  const { logout } = useAuth();
-  const navigate = useNavigate();
   const { t } = useI18n();
-
-  const handleLogout = () => {
-    logout();
-    navigate('/internal/login');
-  };
 
   const MANAGER_LINKS = [
     { to: '/manager/dashboard', label: t('sidebar.dashboard') },
@@ -45,9 +39,6 @@ export function StaffSidebar({ variant }: Props) {
           </Link>
         ))}
       </nav>
-      <button type="button" className="sidebar-logout" onClick={handleLogout}>
-        {t('common.logout')}
-      </button>
     </aside>
   );
 }

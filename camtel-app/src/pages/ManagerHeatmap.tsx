@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
+import { CameroonHeatMap } from '../components/CameroonHeatMap';
 import { analyticsApi, ApiError } from '../lib/api';
 import type { HeatMapResponse } from '../lib/api';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
@@ -30,28 +31,39 @@ export default function ManagerHeatmap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const load = () => {
-    setLoading(true);
+  // `silent` skips the loading state so the periodic auto-refresh below
+  // swaps the map's shading in place instead of flashing a spinner over it
+  // every 30s — only a manual Apply (or the very first load) shows one.
+  const load = (opts: { silent?: boolean } = {}) => {
+    if (!opts.silent) setLoading(true);
     setError('');
     analyticsApi
       .heatMap(start, end, serviceType || undefined)
       .then(setRows)
       .catch((err) => setError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!opts.silent) setLoading(false);
+      });
   };
 
-  useEffect(load, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Reloads whenever a filter changes, then keeps polling in the background
+  // so the map reflects newly-submitted complaints without the manager
+  // having to hit Apply again.
+  useEffect(() => {
+    load();
+    const id = setInterval(() => load({ silent: true }), 30000);
+    return () => clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [start, end, serviceType]);
 
   const handleApply = (ev: FormEvent) => {
     ev.preventDefault();
     load();
   };
 
-  // Aggregate per region for the density bars; city breakdown shown below.
+  // Aggregate per region for the map shading; city breakdown shown below.
   const byRegion = new Map<string, number>();
   for (const r of rows) byRegion.set(r.region, (byRegion.get(r.region) || 0) + r.complaintCount);
-  const regionTotals = [...byRegion.entries()].sort((a, b) => b[1] - a[1]);
-  const max = Math.max(...regionTotals.map(([, c]) => c), 1);
 
   return (
     <div className="staff-layout">
@@ -81,23 +93,11 @@ export default function ManagerHeatmap() {
 
           {loading ? (
             <p>{t('common.loading')}</p>
-          ) : regionTotals.length === 0 ? (
+          ) : rows.length === 0 ? (
             <div className="empty-state">{t('heatmap.empty')}</div>
           ) : (
             <>
-              <div className="region-cards">
-                {regionTotals.map(([region, count]) => (
-                  <div key={region} className="region-card">
-                    <div className="region-name">{region}</div>
-                    <div className="region-count">
-                      {count} {t('heatmap.complaints')}
-                    </div>
-                    <div className="density-bar">
-                      <div className="density-fill" style={{ width: `${(count / max) * 100}%` }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <CameroonHeatMap counts={byRegion} />
 
               <h2 style={{ marginTop: 24 }}>{t('heatmap.byCity')}</h2>
               <div className="table-wrap">
