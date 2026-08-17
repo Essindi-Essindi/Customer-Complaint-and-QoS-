@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Eye } from 'lucide-react';
 import { SubscriberNav } from '../components/SubscriberNav';
 import { StatusBadge } from '../components/StatusBadge';
 import { complaintsApi, ApiError } from '../lib/api';
@@ -76,6 +77,7 @@ export default function MyComplaints() {
                     </td>
                     <td>
                       <Link to={`/my-complaints/${c.ticketNumber}`} className="btn btn-sm">
+                        <Eye size={13} />
                         {t('myComplaints.viewDetails')}
                       </Link>
                     </td>

@@ -10,7 +10,9 @@ import { VerifyEmailForm } from '../components/VerifyEmailForm';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from '../components/SettingsControls';
+import { PasswordInput } from '../components/PasswordInput';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
+import camtelLogo from '../assets/camtel-logo.png';
 
 // Every field here maps 1:1 to dto/request/RegisterSubscriberRequest.java:
 // name, email, phone, password, camtelAccountNumber, serviceType. email and
@@ -136,7 +138,10 @@ export default function Register() {
     <div className="auth-page">
       <SettingsControls className="auth-page-controls" />
       <div className="auth-card">
-        <div className="logo-placeholder">{t('brand.name')}</div>
+        <div className="logo-placeholder">
+          <img src={camtelLogo} alt="" className="logo-placeholder-img" />
+          <span className="logo-placeholder-text">{t('brand.name')}</span>
+        </div>
         <h1>{t('register.title')}</h1>
         <p className="subtitle">{t('register.subtitle')}</p>
 
@@ -216,20 +221,20 @@ export default function Register() {
 
           <div className={`field ${errors.password ? 'error' : ''}`}>
             <label>{t('common.password')}</label>
-            <input
-              type="password"
+            <PasswordInput
               value={form.password}
-              onChange={(e) => set('password', e.target.value)}
+              onChange={(v) => set('password', v)}
+              autoComplete="new-password"
             />
             {errors.password && <span className="field-error">{errors.password}</span>}
           </div>
 
           <div className={`field ${errors.confirmPassword ? 'error' : ''}`}>
             <label>{t('common.confirmPassword')}</label>
-            <input
-              type="password"
+            <PasswordInput
               value={form.confirmPassword}
-              onChange={(e) => set('confirmPassword', e.target.value)}
+              onChange={(v) => set('confirmPassword', v)}
+              autoComplete="new-password"
             />
             {errors.confirmPassword && (
               <span className="field-error">{errors.confirmPassword}</span>

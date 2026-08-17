@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { ListFilter } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
+import { Pagination } from '../components/Pagination';
 import { CameroonHeatMap } from '../components/CameroonHeatMap';
 import { analyticsApi, ApiError } from '../lib/api';
 import type { HeatMapResponse, RegionTotalResponse } from '../lib/api';
@@ -109,6 +111,7 @@ export default function ManagerHeatmap() {
             <input type="date" value={start} onChange={(e) => setStart(e.target.value)} required />
             <input type="date" value={end} onChange={(e) => setEnd(e.target.value)} required />
             <button type="submit" className="btn btn-primary btn-sm">
+              <ListFilter size={14} />
               {t('common.apply')}
             </button>
           </form>
@@ -158,28 +161,7 @@ export default function ManagerHeatmap() {
                 </table>
               </div>
 
-              <div className="pagination-bar">
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  disabled={page === 0}
-                  onClick={() => setPage((p) => Math.max(0, p - 1))}
-                >
-                  {t('dashboard.previous')}
-                </button>
-                <span>
-                  {t('dashboard.pageLabel')} {totalPages === 0 ? 0 : page + 1} {t('dashboard.ofLabel')}{' '}
-                  {totalPages} ({totalElements})
-                </span>
-                <button
-                  type="button"
-                  className="btn btn-outline btn-sm"
-                  disabled={page + 1 >= totalPages}
-                  onClick={() => setPage((p) => p + 1)}
-                >
-                  {t('dashboard.next')}
-                </button>
-              </div>
+              <Pagination page={page} totalPages={totalPages} totalElements={totalElements} onChange={setPage} />
             </>
           )}
         </main>

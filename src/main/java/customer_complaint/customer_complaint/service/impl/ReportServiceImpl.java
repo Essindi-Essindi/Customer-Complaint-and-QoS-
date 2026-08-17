@@ -9,10 +9,13 @@ import customer_complaint.customer_complaint.messaging.ReportGenerationEvent;
 import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Manager;
 import customer_complaint.customer_complaint.model.Report;
+import customer_complaint.customer_complaint.model.Resolution;
 import customer_complaint.customer_complaint.model.enums.ComplaintStatus;
 import customer_complaint.customer_complaint.model.enums.ReportType;
+import customer_complaint.customer_complaint.model.enums.ServiceType;
 import customer_complaint.customer_complaint.repository.ComplaintRepository;
 import customer_complaint.customer_complaint.repository.ReportRepository;
+import customer_complaint.customer_complaint.repository.ResolutionRepository;
 import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.service.ReportService;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
@@ -34,11 +38,14 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 // creates the report row, pdf built async
 @Service
@@ -52,10 +59,12 @@ public class ReportServiceImpl implements ReportService {
     private static final float LEADING = 16f;
     private static final float LOGO_SIZE = 34f;
     private static final String LOGO_RESOURCE = "/branding/camtel-logo.png";
+    private static final float TABLE_WIDTH = PDRectangle.A4.getWidth() - 2 * MARGIN;
 
     private final ReportRepository reportRepository;
     private final UserRepository userRepository;
     private final ComplaintRepository complaintRepository;
+    private final ResolutionRepository resolutionRepository;
     private final ReportEventPublisher reportEventPublisher;
 
     @Value("${report.storage-dir:reports}")
@@ -114,95 +123,317 @@ public class ReportServiceImpl implements ReportService {
         }
     }
 
+    // A column in one of the tables below: a header label plus a fixed
+    // width in PDF points. Every table's column widths sum to TABLE_WIDTH so
+    // the table always spans the same left/right margins as the header box.
+    private record Column(String header, float width) {
+    }
+
     // CAMTEL corporate report template — mirrors the layout of the
     // reference "2026_ACTIVITY_REPORT_..." document (repo root): a header
     // box on every page with the logo top-left, title top-center, and a
     // Code/Version/Date/Page metadata block top-right, under a rule line.
-    // Only the layout is borrowed — the reference document's own content
-    // (server-storage risk tables etc.) is unrelated to what this report
-    // actually is, so the heading text and body are this report's own.
-    // There's no internal document-code system behind this app's reports,
-    // so Code is left as the literal string "null" rather than inventing one.
+    // Only the header layout is borrowed — the body below it is this
+    // report's own: a key-metrics table, status/service breakdown tables,
+    // then the full complaint listing as an actual bordered/shaded table
+    // (not hand-spaced text) so it reads as a real report, not a dump.
     private void writePdf(Report report, List<Complaint> complaints, Path filePath) throws IOException {
+        PDFont regular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
+        PDFont bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
+
+        int total = complaints.size();
         Map<ComplaintStatus, Long> byStatus = new EnumMap<>(ComplaintStatus.class);
         for (Complaint c : complaints) {
             byStatus.merge(c.getStatus(), 1L, Long::sum);
         }
+        long resolved = byStatus.getOrDefault(ComplaintStatus.RESOLVED, 0L);
+        long unresolved = total - resolved;
+        double resolutionRate = total > 0 ? resolved * 100.0 / total : 0;
+        double avgResolutionHours = averageResolutionHours(complaints);
+
+        // Ratings: one bulk query for every complaint in the period rather
+        // than one per row — see ResolutionRepository.findByComplaintIdIn.
+        List<Long> complaintIds = complaints.stream().map(Complaint::getId).toList();
+        List<Resolution> resolutions =
+                complaintIds.isEmpty() ? List.of() : resolutionRepository.findByComplaintIdIn(complaintIds);
+        List<Integer> ratings = resolutions.stream().map(Resolution::getRating).filter(Objects::nonNull).toList();
+        double avgRating = ratings.stream().mapToInt(Integer::intValue).average().orElse(0);
+
+        Map<ServiceType, List<Complaint>> byService =
+                complaints.stream().collect(Collectors.groupingBy(Complaint::getServiceType));
 
         try (PDDocument document = new PDDocument()) {
             PDImageXObject logo = loadLogo(document);
-            int pageNumber = 1;
-
-            PDPage page = new PDPage(PDRectangle.A4);
-            document.addPage(page);
-            PDPageContentStream cs = new PDPageContentStream(document, page);
+            RenderState st = startPage(document, logo, report, 1);
             float x = MARGIN;
-            float y = drawHeader(cs, page, logo, report, pageNumber);
 
-            cs.beginText();
-            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 11);
-            cs.newLineAtOffset(x, y);
-            cs.showText("Period: " + report.getStartDate() + " to " + report.getEndDate());
-            cs.endText();
-            y -= LEADING;
+            st.y = drawLine(st.cs, x, st.y, regular, 10,
+                    "Period: " + report.getStartDate() + "  to  " + report.getEndDate());
+            st.y = drawLine(st.cs, x, st.y, regular, 10,
+                    "Generated by: " + report.getGeneratedBy().getName()
+                            + "  on  " + report.getGeneratedAt().format(DATE_FMT));
+            st.y -= LEADING * 0.5f;
 
-            cs.beginText();
-            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 11);
-            cs.newLineAtOffset(x, y);
-            cs.showText("Generated by: " + report.getGeneratedBy().getName()
-                    + " on " + report.getGeneratedAt().format(DATE_FMT));
-            cs.endText();
-            y -= LEADING * 2;
+            // ---- Key metrics --------------------------------------------------
+            Column[] metricCols = {new Column("Metric", 260), new Column("Value", 235)};
+            String[][] metricRows = {
+                    {"Total complaints", String.valueOf(total)},
+                    {"Resolved", resolved + " (" + String.format("%.1f", resolutionRate) + "%)"},
+                    {"Unresolved / in progress", String.valueOf(unresolved)},
+                    {"Average resolution time", String.format("%.1f hours", avgResolutionHours)},
+                    {"Customer ratings received", ratings.isEmpty() ? "None yet"
+                            : ratings.size() + " (avg " + String.format("%.1f", avgRating) + " / 5)"},
+            };
+            ensureSpace(st, tableHeight(metricRows.length, 9.5f), document, logo, report);
+            st.y = drawLine(st.cs, x, st.y, bold, 12, "Key Metrics");
+            st.y = drawTable(st.cs, x, st.y, metricCols, metricRows, regular, bold, 9.5f);
+            st.y -= LEADING;
 
-            cs.beginText();
-            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12);
-            cs.newLineAtOffset(x, y);
-            cs.showText("Summary (" + complaints.size() + " complaints)");
-            cs.endText();
-            y -= LEADING;
+            // ---- Status breakdown -----------------------------------------------
+            Column[] statusCols = {new Column("Status", 200), new Column("Count", 145), new Column("Share", 150)};
+            String[][] statusRows = Arrays.stream(ComplaintStatus.values())
+                    .map(s -> {
+                        long count = byStatus.getOrDefault(s, 0L);
+                        double pct = total > 0 ? count * 100.0 / total : 0;
+                        return new String[]{s.name(), String.valueOf(count), String.format("%.1f%%", pct)};
+                    })
+                    .toArray(String[][]::new);
+            ensureSpace(st, LEADING + tableHeight(statusRows.length, 9.5f), document, logo, report);
+            st.y = drawLine(st.cs, x, st.y, bold, 12, "Status Breakdown");
+            st.y = drawTable(st.cs, x, st.y, statusCols, statusRows, regular, bold, 9.5f);
+            st.y -= LEADING;
 
-            for (ComplaintStatus status : ComplaintStatus.values()) {
-                cs.beginText();
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 10);
-                cs.newLineAtOffset(x, y);
-                cs.showText("  " + status + ": " + byStatus.getOrDefault(status, 0L));
-                cs.endText();
-                y -= LEADING;
-            }
-            y -= LEADING;
+            // ---- By service type --------------------------------------------
+            Column[] serviceCols = {
+                    new Column("Service", 140), new Column("Total", 110),
+                    new Column("Resolved", 110), new Column("Avg Resolution (h)", 135),
+            };
+            String[][] serviceRows = Arrays.stream(ServiceType.values())
+                    .map(type -> {
+                        List<Complaint> list = byService.getOrDefault(type, List.of());
+                        long svcResolved = list.stream().filter(c -> c.getStatus() == ComplaintStatus.RESOLVED).count();
+                        double svcAvg = averageResolutionHours(list);
+                        return new String[]{
+                                type.name(), String.valueOf(list.size()), String.valueOf(svcResolved),
+                                String.format("%.1f", svcAvg),
+                        };
+                    })
+                    .toArray(String[][]::new);
+            ensureSpace(st, LEADING + tableHeight(serviceRows.length, 9.5f), document, logo, report);
+            st.y = drawLine(st.cs, x, st.y, bold, 12, "By Service Type");
+            st.y = drawTable(st.cs, x, st.y, serviceCols, serviceRows, regular, bold, 9.5f);
+            st.y -= LEADING;
 
-            cs.beginText();
-            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12);
-            cs.newLineAtOffset(x, y);
-            cs.showText("Complaints");
-            cs.endText();
-            y -= LEADING;
+            // ---- Full complaint listing ---------------------------------------
+            Column[] detailCols = {
+                    new Column("Ticket", 65), new Column("Date", 58), new Column("Type", 82),
+                    new Column("Service", 42), new Column("Status", 50), new Column("Region/City", 88),
+                    new Column("Subscriber", 58), new Column("Agent", 52),
+            };
+            float detailFontSize = 7.2f;
+            float detailRowHeight = detailFontSize + 6f;
 
-            for (Complaint c : complaints) {
-                if (y < MARGIN + LEADING) {
-                    cs.close();
-                    page = new PDPage(PDRectangle.A4);
-                    document.addPage(page);
-                    cs = new PDPageContentStream(document, page);
-                    pageNumber++;
-                    y = drawHeader(cs, page, logo, report, pageNumber);
+            ensureSpace(st, LEADING + 20f, document, logo, report);
+            st.y = drawLine(st.cs, x, st.y, bold, 12, "Complaints (" + total + ")");
+
+            if (complaints.isEmpty()) {
+                st.y = drawLine(st.cs, x, st.y, regular, 10, "No complaints in this period.");
+            } else {
+                ensureSpace(st, detailRowHeight * 2, document, logo, report);
+                st.y = drawTableHeaderRow(st.cs, x, st.y, detailCols, bold, detailFontSize);
+
+                boolean shade = false;
+                for (Complaint c : complaints) {
+                    boolean broke = ensureSpace(st, detailRowHeight, document, logo, report);
+                    if (broke) {
+                        st.y = drawTableHeaderRow(st.cs, x, st.y, detailCols, bold, detailFontSize);
+                        shade = false;
+                    }
+                    st.y = drawTableRow(st.cs, x, st.y, detailCols, detailRow(c), regular, detailFontSize, shade);
+                    shade = !shade;
                 }
-
-                String line = String.format("%-16s %-14s %-10s %-14s %s",
-                        c.getTicketNumber(), c.getServiceType(), c.getStatus(),
-                        c.getRegion(), c.getCreatedAt().format(DATE_FMT));
-
-                cs.beginText();
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 9);
-                cs.newLineAtOffset(x, y);
-                cs.showText(line);
-                cs.endText();
-                y -= LEADING;
             }
 
-            cs.close();
+            st.cs.close();
             document.save(filePath.toFile());
         }
+    }
+
+    private String[] detailRow(Complaint c) {
+        String region = nullSafe(c.getRegion());
+        String city = c.getCity() == null || c.getCity().isBlank() ? "" : "/" + c.getCity();
+        return new String[]{
+                nullSafe(c.getTicketNumber()),
+                c.getCreatedAt() == null ? "" : c.getCreatedAt().format(DATE_ONLY_FMT),
+                nullSafe(c.getType()),
+                c.getServiceType() == null ? "" : c.getServiceType().name(),
+                c.getStatus() == null ? "" : c.getStatus().name(),
+                region + city,
+                c.getSubscriber() == null ? "" : nullSafe(c.getSubscriber().getName()),
+                c.getAgent() == null ? "Unassigned" : nullSafe(c.getAgent().getName()),
+        };
+    }
+
+    // Resolution time: (updatedAt - createdAt) in hours for every RESOLVED
+    // complaint in the group, averaged. Same formula AnalyticsServiceImpl
+    // uses for the KPI dashboard, so the report and the dashboard never
+    // disagree about what "average resolution time" means.
+    private double averageResolutionHours(List<Complaint> complaints) {
+        return complaints.stream()
+                .filter(c -> c.getStatus() == ComplaintStatus.RESOLVED && c.getUpdatedAt() != null)
+                .mapToLong(c -> Duration.between(c.getCreatedAt(), c.getUpdatedAt()).toHours())
+                .average()
+                .orElse(0);
+    }
+
+    private String nullSafe(String s) {
+        return s == null ? "" : s;
+    }
+
+    // ---- low-level page/table rendering ------------------------------------
+
+    // Mutable render cursor: which page/content-stream we're currently
+    // drawing into and how far down it we've gotten. Passed by reference to
+    // every draw helper so a mid-table page break (see ensureSpace) is
+    // visible to the caller without every helper having to return and
+    // re-thread a tuple of (page, cs, y, pageNumber).
+    private static final class RenderState {
+        PDPage page;
+        PDPageContentStream cs;
+        float y;
+        int pageNumber;
+    }
+
+    private RenderState startPage(PDDocument document, PDImageXObject logo, Report report, int pageNumber)
+            throws IOException {
+        RenderState st = new RenderState();
+        st.page = new PDPage(PDRectangle.A4);
+        document.addPage(st.page);
+        st.cs = new PDPageContentStream(document, st.page);
+        st.pageNumber = pageNumber;
+        st.y = drawHeader(st.cs, st.page, logo, report, pageNumber);
+        return st;
+    }
+
+    // Starts a fresh page (closing the current one first) if the next block
+    // of `needed` points wouldn't fit above the bottom margin. Returns
+    // whether a break happened, so callers drawing a table can redraw the
+    // column header row on the new page.
+    private boolean ensureSpace(RenderState st, float needed, PDDocument document, PDImageXObject logo, Report report)
+            throws IOException {
+        if (st.y - needed >= MARGIN) return false;
+        st.cs.close();
+        RenderState fresh = startPage(document, logo, report, st.pageNumber + 1);
+        st.page = fresh.page;
+        st.cs = fresh.cs;
+        st.y = fresh.y;
+        st.pageNumber = fresh.pageNumber;
+        return true;
+    }
+
+    // Conservative height estimate for a small table (header + rows) used to
+    // reserve space up front — the aggregate tables (metrics/status/service)
+    // never break mid-table, they always fit on one page.
+    private float tableHeight(int rowCount, float fontSize) {
+        return (rowCount + 1) * (fontSize + 7f);
+    }
+
+    private float drawLine(PDPageContentStream cs, float x, float y, PDFont font, float size, String text)
+            throws IOException {
+        cs.beginText();
+        cs.setFont(font, size);
+        cs.newLineAtOffset(x, y);
+        cs.showText(text);
+        cs.endText();
+        return y - LEADING;
+    }
+
+    private float drawTable(PDPageContentStream cs, float x, float y, Column[] cols, String[][] rows,
+                             PDFont regular, PDFont bold, float fontSize) throws IOException {
+        y = drawTableHeaderRow(cs, x, y, cols, bold, fontSize);
+        boolean shade = false;
+        for (String[] row : rows) {
+            y = drawTableRow(cs, x, y, cols, row, regular, fontSize, shade);
+            shade = !shade;
+        }
+        return y;
+    }
+
+    private float drawTableHeaderRow(PDPageContentStream cs, float x, float y, Column[] cols, PDFont bold,
+                                      float fontSize) throws IOException {
+        float rowHeight = fontSize + 7f;
+        float bottom = y - rowHeight;
+
+        cs.setNonStrokingColor(0.16f, 0.30f, 0.48f);
+        cs.addRect(x, bottom, TABLE_WIDTH, rowHeight);
+        cs.fill();
+
+        cs.setNonStrokingColor(1f, 1f, 1f);
+        float cx = x;
+        float baseline = y - fontSize - 3f;
+        for (Column col : cols) {
+            String text = truncate(bold, fontSize, col.header(), col.width() - 8f);
+            cs.beginText();
+            cs.setFont(bold, fontSize);
+            cs.newLineAtOffset(cx + 4f, baseline);
+            cs.showText(text);
+            cs.endText();
+            cx += col.width();
+        }
+        cs.setNonStrokingColor(0f, 0f, 0f);
+        return bottom;
+    }
+
+    private float drawTableRow(PDPageContentStream cs, float x, float y, Column[] cols, String[] values,
+                                PDFont font, float fontSize, boolean shaded) throws IOException {
+        float rowHeight = fontSize + 6f;
+        float bottom = y - rowHeight;
+
+        if (shaded) {
+            cs.setNonStrokingColor(0.94f, 0.95f, 0.97f);
+            cs.addRect(x, bottom, TABLE_WIDTH, rowHeight);
+            cs.fill();
+            cs.setNonStrokingColor(0f, 0f, 0f);
+        }
+
+        float cx = x;
+        float baseline = y - fontSize - 2f;
+        for (int i = 0; i < cols.length; i++) {
+            String text = truncate(font, fontSize, values[i] == null ? "" : values[i], cols[i].width() - 8f);
+            cs.beginText();
+            cs.setFont(font, fontSize);
+            cs.newLineAtOffset(cx + 4f, baseline);
+            cs.showText(text);
+            cs.endText();
+            cx += cols[i].width();
+        }
+
+        cs.setLineWidth(0.5f);
+        cs.setStrokingColor(0.82f, 0.84f, 0.88f);
+        cs.moveTo(x, bottom);
+        cs.lineTo(x + TABLE_WIDTH, bottom);
+        cs.stroke();
+        cs.setStrokingColor(0f, 0f, 0f);
+        return bottom;
+    }
+
+    // Shortens `text` with a trailing "..." so it fits within maxWidth at
+    // this font/size — measured against the real (proportional) glyph
+    // widths rather than a fixed character count, so it doesn't over- or
+    // under-truncate depending on which letters happen to be in it.
+    private String truncate(PDFont font, float fontSize, String text, float maxWidth) throws IOException {
+        if (text.isEmpty() || font.getStringWidth(text) / 1000f * fontSize <= maxWidth) return text;
+
+        String suffix = "...";
+        float suffixWidth = font.getStringWidth(suffix) / 1000f * fontSize;
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < text.length(); i++) {
+            char ch = text.charAt(i);
+            float width = font.getStringWidth(sb.toString() + ch) / 1000f * fontSize + suffixWidth;
+            if (width > maxWidth) break;
+            sb.append(ch);
+        }
+        return sb + suffix;
     }
 
     /**

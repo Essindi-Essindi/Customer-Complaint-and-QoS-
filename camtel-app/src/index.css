@@ -362,7 +362,18 @@ a:hover {
 }
 
 .logo-placeholder {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.logo-placeholder-img {
+  height: 40px;
+  width: auto;
+  flex-shrink: 0;
+}
+.logo-placeholder-text {
   font-size: 1.8rem;
   font-weight: 800;
   background: linear-gradient(120deg, var(--primary-light), var(--cyan));
@@ -370,7 +381,6 @@ a:hover {
   background-clip: text;
   color: transparent;
   letter-spacing: 0.06em;
-  margin-bottom: 16px;
 }
 
 .auth-card h1 {
@@ -471,6 +481,7 @@ a:hover {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   padding: 9px 18px;
   border-radius: var(--radius-sm);
   font-size: 0.9rem;
@@ -481,6 +492,9 @@ a:hover {
   position: relative;
   overflow: hidden;
   transition: transform 0.18s var(--ease), box-shadow 0.25s var(--ease), background 0.2s var(--ease), opacity 0.2s;
+}
+.btn svg {
+  flex-shrink: 0;
 }
 .btn:active:not(:disabled) {
   transform: scale(0.97);
@@ -596,9 +610,11 @@ a:hover {
   position: absolute;
   right: 8px;
   top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  font-size: 1.2rem;
   cursor: pointer;
   color: inherit;
   transition: transform 0.15s var(--ease);
@@ -673,10 +689,12 @@ a:hover {
   position: absolute;
   right: 8px;
   top: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
   color: var(--muted);
-  font-size: 1.2rem;
   cursor: pointer;
   transition: color 0.2s var(--ease);
 }
@@ -776,6 +794,9 @@ a:hover {
   gap: 12px;
 }
 .nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--text-dim);
   font-size: 0.9rem;
   transition: color 0.2s;
@@ -841,7 +862,9 @@ a:hover {
   padding: 12px;
 }
 .sidebar-link {
-  display: block;
+  display: flex;
+  align-items: center;
+  gap: 10px;
   position: relative;
   padding: 10px 14px;
   color: var(--text-dim);
@@ -849,6 +872,16 @@ a:hover {
   border-radius: var(--radius-sm);
   margin-bottom: 2px;
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.sidebar-link-icon {
+  display: flex;
+  flex-shrink: 0;
+  color: var(--muted);
+  transition: color 0.2s var(--ease);
+}
+.sidebar-link:hover .sidebar-link-icon,
+.sidebar-link.active .sidebar-link-icon {
+  color: var(--primary-light);
 }
 .sidebar-link::before {
   content: '';
@@ -1053,9 +1086,11 @@ a:hover {
   font-size: 1.1rem;
 }
 .modal-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: none;
   border: none;
-  font-size: 1.5rem;
   cursor: pointer;
   color: var(--muted);
   line-height: 1;
@@ -2052,6 +2087,36 @@ a:hover {
   display: block;
   width: 100%;
   margin-bottom: 8px;
+}
+
+/* ── Password field show/hide toggle (PasswordInput.tsx) ──────────────────── */
+.password-field {
+  position: relative;
+}
+.password-field input {
+  padding-right: 40px;
+}
+.password-toggle {
+  position: absolute;
+  right: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color 0.2s var(--ease), background 0.2s var(--ease);
+}
+.password-toggle:hover {
+  color: var(--text);
+  background: rgba(var(--tint), 0.08);
 }
 
 /* Confirm sub-panel */

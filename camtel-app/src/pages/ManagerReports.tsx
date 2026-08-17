@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Download } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { reportsApi, ApiError } from '../lib/api';
@@ -144,6 +145,7 @@ export default function ManagerReports() {
                           onClick={() => handleDownload(r)}
                           disabled={downloadingId === r.id}
                         >
+                          <Download size={13} />
                           {downloadingId === r.id ? t('common.loading') : t('reports.downloadPdf')}
                         </button>
                       </td>

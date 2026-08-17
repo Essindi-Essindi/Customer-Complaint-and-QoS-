@@ -1,9 +1,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import type { FormEvent } from 'react';
+import { X, Eye, ListFilter, RotateCcw, Search } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { Modal } from '../components/Modal';
 import { Toast } from '../components/Toast';
+import { Pagination } from '../components/Pagination';
 import { StatusBadge } from '../components/StatusBadge';
 import {
   analyticsApi,
@@ -285,7 +287,7 @@ export default function ManagerDashboard() {
                         aria-label={t('common.close')}
                         onClick={() => setDismissedPatterns((s) => new Set(s).add(idx))}
                     >
-                      ×
+                      <X size={16} />
                     </button>
                   </div>
               );
@@ -353,8 +355,12 @@ export default function ManagerDashboard() {
               </select>
               <input type="date" value={filterStart} onChange={(e) => setFilterStart(e.target.value)} />
               <input type="date" value={filterEnd} onChange={(e) => setFilterEnd(e.target.value)} />
-              <button type="submit" className="btn btn-primary btn-sm">{t('dashboard.applyFilters')}</button>
+              <button type="submit" className="btn btn-primary btn-sm">
+                <ListFilter size={14} />
+                {t('dashboard.applyFilters')}
+              </button>
               <button type="button" className="btn btn-outline btn-sm" onClick={resetFilters}>
+                <RotateCcw size={14} />
                 {t('dashboard.reset')}
               </button>
             </form>
@@ -399,6 +405,7 @@ export default function ManagerDashboard() {
                                   className="btn btn-outline btn-sm"
                                   onClick={() => openModal(row.ticketNumber)}
                               >
+                                <Eye size={13} />
                                 {t('dashboard.view')}
                               </button>
                             </td>
@@ -408,28 +415,7 @@ export default function ManagerDashboard() {
                     </table>
                   </div>
 
-                  <div className="pagination-bar">
-                    <button
-                        type="button"
-                        className="btn btn-outline btn-sm"
-                        disabled={page === 0}
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                    >
-                      {t('dashboard.previous')}
-                    </button>
-                    <span>
-                  {t('dashboard.pageLabel')} {totalPages === 0 ? 0 : page + 1}{' '}
-                      {t('dashboard.ofLabel')} {totalPages} ({totalElements})
-                </span>
-                    <button
-                        type="button"
-                        className="btn btn-outline btn-sm"
-                        disabled={page + 1 >= totalPages}
-                        onClick={() => setPage((p) => p + 1)}
-                    >
-                      {t('dashboard.next')}
-                    </button>
-                  </div>
+                  <Pagination page={page} totalPages={totalPages} totalElements={totalElements} onChange={setPage} />
                 </>
             )}
 
@@ -447,6 +433,7 @@ export default function ManagerDashboard() {
               </div>
               {lookupError && <div className="banner error">{lookupError}</div>}
               <button type="submit" className="btn btn-primary btn-sm" disabled={looking}>
+                <Search size={14} />
                 {looking ? t('common.loading') : t('dashboard.lookup')}
               </button>
             </form>

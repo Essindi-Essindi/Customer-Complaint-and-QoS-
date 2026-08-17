@@ -2,6 +2,7 @@ package customer_complaint.customer_complaint.controller;
 
 import customer_complaint.customer_complaint.dto.request.UserCreateRequest;
 import customer_complaint.customer_complaint.dto.request.UserUpdateRequest;
+import customer_complaint.customer_complaint.dto.response.AgentImportResultResponse;
 import customer_complaint.customer_complaint.dto.response.UserResponse;
 import customer_complaint.customer_complaint.service.UserManagementService;
 import jakarta.validation.Valid;
@@ -12,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 // manager endpoints for user accounts
 @RestController
@@ -36,6 +38,15 @@ public class UserManagementController {
     public ResponseEntity<Void> deactivate(@PathVariable Long userId) {
         userManagementService.deactivateUser(userId);
         return ResponseEntity.noContent().build();
+    }
+
+    // .xlsx "annuaire" bulk import — agents only (see
+    // UserManagementServiceImpl.importAgents). Partial success is normal:
+    // the response's per-row list is how the manager finds out which rows
+    // failed and why, not a 4xx for the whole request.
+    @PostMapping("/import-agents")
+    public ResponseEntity<AgentImportResultResponse> importAgents(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(userManagementService.importAgents(file));
     }
 
     @GetMapping

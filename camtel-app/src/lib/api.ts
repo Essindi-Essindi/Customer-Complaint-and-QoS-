@@ -497,6 +497,25 @@ export interface UserResponse {
   active: boolean;
 }
 
+// dto/response/AgentImportRowResult.java — one row's outcome. `email` is the
+// real address the agent should log in with (it may carry a digit suffix if
+// the naive surname.name@camtel.com collided with an existing account).
+export interface AgentImportRowResult {
+  row: number;
+  name: string;
+  email: string;
+  imported: boolean;
+  message: string;
+}
+
+// dto/response/AgentImportResultResponse.java
+export interface AgentImportResultResponse {
+  totalRows: number;
+  importedCount: number;
+  failedCount: number;
+  rows: AgentImportRowResult[];
+}
+
 export const usersApi = {
   list: (role?: Role, page = 0, size = 20) =>
       request<SpringPage<UserResponse>>('/manager/users', { query: { role, page, size } }),
@@ -505,4 +524,25 @@ export const usersApi = {
   update: (userId: number, data: UserUpdateRequest) =>
       request<UserResponse>(`/manager/users/${userId}`, { method: 'PUT', body: data }),
   deactivate: (userId: number) => request<void>(`/manager/users/${userId}`, { method: 'DELETE' }),
+  // multipart upload — not JSON, so this bypasses request() the same way
+  // reportsApi.download() does for binary responses.
+  importAgents: async (file: File): Promise<AgentImportResultResponse> => {
+    const token = getToken();
+    const headers: Record<string, string> = {};
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const res = await fetch(`${API_BASE_URL}/manager/users/import-agents`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    const isJson = (res.headers.get('content-type') || '').includes('application/json');
+    const payload = isJson ? await res.json().catch(() => null) : null;
+    if (!res.ok) {
+      throw new ApiError(payload || { message: `Import failed with status ${res.status}` }, res.status);
+    }
+    return payload as AgentImportResultResponse;
+  },
 };

@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from '../components/SettingsControls';
+import camtelLogo from '../assets/camtel-logo.png';
 
 export default function RoleSelect() {
   const navigate = useNavigate();
@@ -10,7 +11,10 @@ export default function RoleSelect() {
     <div className="auth-page role-select-page">
       <SettingsControls className="auth-page-controls" />
       <div className="role-select-card">
-        <div className="logo-placeholder">{t('brand.name')}</div>
+        <div className="logo-placeholder">
+          <img src={camtelLogo} alt="" className="logo-placeholder-img" />
+          <span className="logo-placeholder-text">{t('brand.name')}</span>
+        </div>
         <h1>{t('roleSelect.title')}</h1>
         <p className="subtitle">{t('roleSelect.subtitle')}</p>
 

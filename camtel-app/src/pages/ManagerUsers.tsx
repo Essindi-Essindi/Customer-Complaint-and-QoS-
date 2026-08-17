@@ -1,10 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { Plus, Pencil, UserX, UserCheck, FileSpreadsheet, Download, CheckCircle2, XCircle } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { Modal } from '../components/Modal';
 import { Toast } from '../components/Toast';
+import { Pagination } from '../components/Pagination';
+import { PasswordInput } from '../components/PasswordInput';
 import { usersApi, ApiError } from '../lib/api';
-import type { UserResponse, UserCreateRequest, UserUpdateRequest } from '../lib/api';
+import type { UserResponse, UserCreateRequest, UserUpdateRequest, AgentImportResultResponse } from '../lib/api';
 import type { Role } from '../lib/constants';
 import { REGIONS, SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 import { useI18n } from '../context/I18nContext';
@@ -82,6 +85,13 @@ export default function ManagerUsers() {
   const [confirmDeactivate, setConfirmDeactivate] = useState<UserResponse | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
+  const [importModal, setImportModal] = useState(false);
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState<AgentImportResultResponse | null>(null);
+  const [importError, setImportError] = useState('');
+  const importFileInputRef = useRef<HTMLInputElement>(null);
+
   const refresh = () => {
     setLoading(true);
     usersApi
@@ -100,6 +110,41 @@ export default function ManagerUsers() {
   const handleRoleFilterChange = (value: Role | '') => {
     setRoleFilter(value);
     setPage(0); // a new filter invalidates whatever page we were on
+  };
+
+  const openImport = () => {
+    setImportFile(null);
+    setImportResult(null);
+    setImportError('');
+    setImportModal(true);
+  };
+
+  const closeImport = () => {
+    setImportModal(false);
+    setImportFile(null);
+    setImportResult(null);
+    setImportError('');
+  };
+
+  const submitImport = async () => {
+    if (!importFile) return;
+    setImporting(true);
+    setImportError('');
+    setImportResult(null);
+    try {
+      const result = await usersApi.importAgents(importFile);
+      setImportResult(result);
+      setImportFile(null);
+      if (importFileInputRef.current) importFileInputRef.current.value = '';
+      if (result.importedCount > 0) {
+        setToast(`${result.importedCount} ${t('users.importSummary')}`);
+        refresh();
+      }
+    } catch (err) {
+      setImportError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
+    } finally {
+      setImporting(false);
+    }
   };
 
   const openCreate = () => {
@@ -222,9 +267,16 @@ export default function ManagerUsers() {
         <main className="page-content">
           <div className="page-title-row">
             <h1>{t('page.managerUsers')}</h1>
-            <button type="button" className="btn btn-primary" onClick={openCreate}>
-              + {t('users.createNew')}
-            </button>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+              <button type="button" className="btn btn-outline" onClick={openImport}>
+                <FileSpreadsheet size={15} />
+                {t('users.importAgents')}
+              </button>
+              <button type="button" className="btn btn-primary" onClick={openCreate}>
+                <Plus size={15} />
+                {t('users.createNew')}
+              </button>
+            </div>
           </div>
 
           <div className="filters-bar">
@@ -270,6 +322,7 @@ export default function ManagerUsers() {
                       </td>
                       <td>
                         <button type="button" className="btn btn-sm" onClick={() => openEdit(u)}>
+                          <Pencil size={13} />
                           {t('users.edit')}
                         </button>{' '}
                         {u.active ? (
@@ -278,10 +331,12 @@ export default function ManagerUsers() {
                             className="btn btn-sm btn-outline"
                             onClick={() => setConfirmDeactivate(u)}
                           >
+                            <UserX size={13} />
                             {t('users.deactivate')}
                           </button>
                         ) : (
                           <button type="button" className="btn btn-sm btn-outline" onClick={() => reactivate(u)}>
+                            <UserCheck size={13} />
                             {t('users.reactivate')}
                           </button>
                         )}
@@ -292,28 +347,7 @@ export default function ManagerUsers() {
               </table>
             </div>
 
-            <div className="pagination-bar">
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                disabled={page === 0}
-                onClick={() => setPage((p) => Math.max(0, p - 1))}
-              >
-                {t('dashboard.previous')}
-              </button>
-              <span>
-                {t('dashboard.pageLabel')} {totalPages === 0 ? 0 : page + 1} {t('dashboard.ofLabel')} {totalPages} (
-                {totalElements})
-              </span>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                disabled={page + 1 >= totalPages}
-                onClick={() => setPage((p) => p + 1)}
-              >
-                {t('dashboard.next')}
-              </button>
-            </div>
+            <Pagination page={page} totalPages={totalPages} totalElements={totalElements} onChange={setPage} />
             </>
           )}
         </main>
@@ -345,10 +379,10 @@ export default function ManagerUsers() {
           </div>
           <div className={`field ${createErrors.password ? 'error' : ''}`}>
             <label>{t('common.password')}</label>
-            <input
-              type="password"
+            <PasswordInput
               value={createForm.password}
-              onChange={(e) => setCreateForm((f) => ({ ...f, password: e.target.value }))}
+              onChange={(v) => setCreateForm((f) => ({ ...f, password: v }))}
+              autoComplete="new-password"
             />
             {createErrors.password && <span className="field-error">{createErrors.password}</span>}
           </div>
@@ -510,6 +544,103 @@ export default function ManagerUsers() {
             </button>
             <button type="button" className="btn btn-primary" onClick={doDeactivate}>
               {t('common.yes')}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {importModal && (
+        <Modal title={t('users.importTitle')} onClose={closeImport} wide>
+          <p className="subtitle" style={{ textAlign: 'left', marginBottom: 16 }}>
+            {t('users.importIntro')}
+          </p>
+
+          <a href="/annuaire-agents-exemple.xlsx" download className="btn btn-outline btn-sm" style={{ marginBottom: 16 }}>
+            <Download size={13} />
+            {t('users.importTemplate')}
+          </a>
+
+          <div className="field">
+            <input
+              ref={importFileInputRef}
+              type="file"
+              accept=".xlsx"
+              style={{ display: 'none' }}
+              onChange={(e) => setImportFile(e.target.files?.[0] ?? null)}
+            />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn btn-outline btn-sm"
+                onClick={() => importFileInputRef.current?.click()}
+              >
+                <FileSpreadsheet size={13} />
+                {t('users.importChooseFile')}
+              </button>
+              <span className="hint-inline">{importFile ? importFile.name : ''}</span>
+            </div>
+          </div>
+
+          {importError && <div className="banner error">{importError}</div>}
+
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={submitImport}
+            disabled={!importFile || importing}
+          >
+            {importing ? t('users.importUploading') : t('users.importUpload')}
+          </button>
+
+          {importResult && (
+            <div style={{ marginTop: 20 }}>
+              <p style={{ fontWeight: 600, marginBottom: 10 }}>
+                {t('users.importDone')}: {importResult.importedCount} {t('users.importSummary')}
+                {importResult.failedCount} {t('users.importFailedSuffix')}
+                {importResult.totalRows} {t('users.importRowsSuffix')}
+              </p>
+              <div className="table-wrap">
+                <table className="data-table">
+                  <thead>
+                    <tr>
+                      <th>{t('users.importColRow')}</th>
+                      <th>{t('users.importColName')}</th>
+                      <th>{t('users.importColEmail')}</th>
+                      <th>{t('users.importColStatus')}</th>
+                      <th>{t('users.importColMessage')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {importResult.rows.map((row) => (
+                      <tr key={row.row}>
+                        <td>{row.row}</td>
+                        <td>{row.name}</td>
+                        <td>{row.email || '—'}</td>
+                        <td>
+                          {row.imported ? (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--success)' }}>
+                              <CheckCircle2 size={14} />
+                              {t('users.importStatusOk')}
+                            </span>
+                          ) : (
+                            <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--danger)' }}>
+                              <XCircle size={14} />
+                              {t('users.importStatusFailed')}
+                            </span>
+                          )}
+                        </td>
+                        <td>{row.message}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="modal-actions">
+            <button type="button" className="btn btn-outline" onClick={closeImport}>
+              {t('common.close')}
             </button>
           </div>
         </Modal>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 
 interface ModalProps {
   title: string;
@@ -17,7 +18,7 @@ export function Modal({ title, onClose, children, wide }: ModalProps) {
         <div className="modal-header">
           <h2>{title}</h2>
           <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
-            ×
+            <X size={20} />
           </button>
         </div>
         <div className="modal-body">{children}</div>

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
+import { Eye, UserPlus } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { StatusBadge } from '../components/StatusBadge';
@@ -160,6 +161,7 @@ export default function AgentComplaints() {
                   </td>
                   <td>
                     <button type="button" className="btn btn-sm" onClick={() => open(c)}>
+                      <Eye size={13} />
                       {t('agent.open')}
                     </button>
                   </td>
@@ -192,6 +194,7 @@ export default function AgentComplaints() {
               </div>
               {claimError && <div className="banner error">{claimError}</div>}
               <button type="submit" className="btn btn-primary btn-sm" disabled={claiming}>
+                <UserPlus size={14} />
                 {claiming ? t('agent.claiming') : t('agent.claim')}
               </button>
             </form>

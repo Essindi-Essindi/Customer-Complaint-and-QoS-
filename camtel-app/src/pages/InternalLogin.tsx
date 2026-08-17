@@ -5,7 +5,9 @@ import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { authApi, ApiError } from '../lib/api';
 import { SettingsControls } from '../components/SettingsControls';
+import { PasswordInput } from '../components/PasswordInput';
 import { ChevronLeftIcon } from '../components/icons';
+import camtelLogo from '../assets/camtel-logo.png';
 
 // Same /api/auth/login endpoint as the subscriber login — the backend
 // doesn't distinguish staff vs subscriber logins, it just returns whichever
@@ -53,7 +55,10 @@ export default function InternalLogin() {
     <div className="auth-page">
       <SettingsControls className="auth-page-controls" />
       <div className="auth-card">
-        <div className="logo-placeholder">{t('brand.name')}</div>
+        <div className="logo-placeholder">
+          <img src={camtelLogo} alt="" className="logo-placeholder-img" />
+          <span className="logo-placeholder-text">{t('brand.name')}</span>
+        </div>
         <h1>{t('internal.title')}</h1>
         <p className="subtitle">{t('internal.subtitle')}</p>
 
@@ -66,11 +71,7 @@ export default function InternalLogin() {
           </div>
           <div className="field">
             <label>{t('common.password')}</label>
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
+            <PasswordInput value={password} onChange={setPassword} autoComplete="current-password" />
           </div>
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? t('common.loggingIn') : t('common.login')}

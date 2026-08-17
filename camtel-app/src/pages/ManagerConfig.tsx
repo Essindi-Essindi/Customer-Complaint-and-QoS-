@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { StaffSidebar } from '../components/StaffSidebar';
 import { StaffHeader } from '../components/StaffHeader';
 import { Modal } from '../components/Modal';
@@ -98,7 +99,8 @@ export default function ManagerConfig() {
           <div className="page-title-row">
             <div />
             <button type="button" className="btn btn-primary" onClick={openAdd}>
-              + {t('config.addCategory')}
+              <Plus size={15} />
+              {t('config.addCategory')}
             </button>
           </div>
 
@@ -123,6 +125,7 @@ export default function ManagerConfig() {
                       <td>{c.description}</td>
                       <td>
                         <button type="button" className="btn btn-sm" onClick={() => openEdit(c)}>
+                          <Pencil size={13} />
                           {t('users.edit')}
                         </button>{' '}
                         <button
@@ -130,6 +133,7 @@ export default function ManagerConfig() {
                           className="btn btn-sm btn-outline"
                           onClick={() => setDeleteTarget(c)}
                         >
+                          <Trash2 size={13} />
                           {t('config.delete')}
                         </button>
                       </td>

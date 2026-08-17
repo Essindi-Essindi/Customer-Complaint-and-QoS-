@@ -6,6 +6,7 @@ import { SettingsControls } from '../components/SettingsControls';
 import { VerifyEmailForm } from '../components/VerifyEmailForm';
 import { Toast } from '../components/Toast';
 import type { AuthResponse } from '../lib/api';
+import camtelLogo from '../assets/camtel-logo.png';
 
 // Standalone page for /verify-email — reachable directly (e.g. the "verify
 // email" link on Login, a bookmarked/refreshed link, or a link in the code
@@ -37,7 +38,10 @@ export default function VerifyEmail() {
     <div className="auth-page">
       <SettingsControls className="auth-page-controls" />
       <div className="auth-card">
-        <div className="logo-placeholder">{t('brand.name')}</div>
+        <div className="logo-placeholder">
+          <img src={camtelLogo} alt="" className="logo-placeholder-img" />
+          <span className="logo-placeholder-text">{t('brand.name')}</span>
+        </div>
         <h1>{t('verify.title')}</h1>
         <p className="subtitle">{t('verify.subtitle')}</p>
 
