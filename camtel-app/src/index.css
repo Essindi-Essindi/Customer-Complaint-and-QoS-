@@ -108,6 +108,61 @@ html {
   scroll-behavior: smooth;
 }
 
+/* ---------- Theme switch cross-fade (View Transitions API) ----------
+   ThemeContext wraps the theme flip in document.startViewTransition, which
+   snapshots the page before/after and hands us these pseudo-elements to
+   animate between. Overriding the browser's default 0.25s crossfade with our
+   own duration/easing keeps the fade in the same rhythm as the rest of the
+   UI (--ease). Unsupported browsers (Firefox, older Safari) just never get
+   these pseudo-elements — the theme still flips, only the fade is missing. */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.55s;
+  animation-timing-function: var(--ease);
+}
+::view-transition-old(root) {
+  animation-name: theme-fade-out;
+}
+::view-transition-new(root) {
+  animation-name: theme-fade-in;
+}
+@keyframes theme-fade-out {
+  to { opacity: 0; }
+}
+@keyframes theme-fade-in {
+  from { opacity: 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(root),
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
+  }
+}
+
+/* ---------- Themed scrollbar ---------- */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+*::-webkit-scrollbar-thumb {
+  background-color: var(--border-strong);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+*::-webkit-scrollbar-thumb:hover {
+  background-color: var(--muted);
+  background-clip: padding-box;
+}
+
 body {
   font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-0);
@@ -437,9 +492,23 @@ a:hover {
   width: 100%;
   box-shadow: 0 8px 24px rgba(47, 143, 255, 0.35);
 }
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255, 255, 255, 0.35) 50%, transparent 70%);
+  background-size: 220% 100%;
+  opacity: 0;
+  transition: opacity 0.2s var(--ease);
+  pointer-events: none;
+}
 .btn-primary:hover:not(:disabled) {
   box-shadow: 0 10px 30px rgba(47, 143, 255, 0.5);
   transform: translateY(-1px);
+}
+.btn-primary:hover:not(:disabled)::after {
+  opacity: 1;
+  animation: beam 1s var(--ease);
 }
 .btn-primary:disabled {
   opacity: 0.5;
@@ -773,12 +842,25 @@ a:hover {
 }
 .sidebar-link {
   display: block;
+  position: relative;
   padding: 10px 14px;
   color: var(--text-dim);
   font-size: 0.9rem;
   border-radius: var(--radius-sm);
   margin-bottom: 2px;
   transition: background 0.2s var(--ease), color 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.sidebar-link::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  border-radius: 3px;
+  background: linear-gradient(180deg, var(--cyan), var(--primary-light));
+  transform: translateY(-50%);
+  transition: height 0.25s var(--ease);
 }
 .sidebar-link:hover {
   background: rgba(var(--tint), 0.06);
@@ -791,6 +873,9 @@ a:hover {
   color: var(--text);
   box-shadow: 0 0 0 1px rgba(var(--tint), 0.1) inset, 0 0 16px -4px rgba(47, 143, 255, 0.5);
   font-weight: 600;
+}
+.sidebar-link.active::before {
+  height: 60%;
 }
 .staff-main {
   flex: 1;
@@ -866,6 +951,9 @@ a:hover {
 }
 .data-table tr {
   transition: background 0.18s var(--ease);
+}
+.data-table tbody tr {
+  animation: fade-up 0.3s var(--ease) both;
 }
 .data-table tr:hover td {
   background: rgba(var(--tint), 0.045);
@@ -1149,6 +1237,34 @@ a:hover {
   box-shadow: var(--shadow-lift);
   border-color: var(--border-strong);
 }
+
+/* ---------- Entrance stagger ----------
+   Shared 30ms-per-item cadence across every list-like surface that animates
+   in on mount (KPI tiles, role picker, reply templates, table rows) so the
+   whole app reveals with one consistent rhythm instead of popping in at
+   once. Capped at item 9 — beyond that the delay would make long tables
+   feel sluggish to read. */
+.kpi-card:nth-child(1),
+.role-option:nth-child(1),
+.template-card:nth-child(1),
+.data-table tbody tr:nth-child(1) { animation-delay: 0.03s; }
+.kpi-card:nth-child(2),
+.role-option:nth-child(2),
+.template-card:nth-child(2),
+.data-table tbody tr:nth-child(2) { animation-delay: 0.06s; }
+.kpi-card:nth-child(3),
+.role-option:nth-child(3),
+.template-card:nth-child(3),
+.data-table tbody tr:nth-child(3) { animation-delay: 0.09s; }
+.kpi-card:nth-child(4),
+.role-option:nth-child(4),
+.template-card:nth-child(4),
+.data-table tbody tr:nth-child(4) { animation-delay: 0.12s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(6) { animation-delay: 0.18s; }
+.data-table tbody tr:nth-child(7) { animation-delay: 0.21s; }
+.data-table tbody tr:nth-child(8) { animation-delay: 0.24s; }
+.data-table tbody tr:nth-child(n + 9) { animation-delay: 0.27s; }
 .kpi-label {
   font-size: 0.78rem;
   color: var(--muted);
@@ -1479,6 +1595,7 @@ a:hover {
 }
 .template-card {
   padding: 16px;
+  animation: fade-up 0.35s var(--ease) both;
 }
 .template-trigger {
   font-weight: 600;
@@ -1679,6 +1796,9 @@ a:hover {
 .theme-toggle:hover .theme-toggle-thumb {
   transform: scale(1.08);
 }
+.theme-toggle-icon {
+  animation: pop-in 0.3s var(--ease) both;
+}
 
 /* ---------- Role select landing page ---------- */
 .role-select-card {
@@ -1729,6 +1849,7 @@ a:hover {
   color: var(--text);
   cursor: pointer;
   font-family: inherit;
+  animation: pop-in 0.4s var(--ease) both;
   transition: transform 0.25s var(--ease), border-color 0.25s var(--ease), box-shadow 0.25s var(--ease);
 }
 .role-option:hover {
