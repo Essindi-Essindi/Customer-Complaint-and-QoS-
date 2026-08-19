@@ -1,0 +1,24 @@
+target/
+.git
+.idea
+.env
+.env.*
+!.env.example
+
+# Test resources / sources don't need to ship into the build context
+src/test/
+
+# Frontend project, docs, and generated reports aren't needed for the
+# backend Docker image
+camtel-app/
+docs/
+reports/
+
+# IDE / OS cruft
+.vscode/
+*.iml
+.DS_Store
+
+# Misc project-local files not needed in the image
+HELP.md
+.claude/
