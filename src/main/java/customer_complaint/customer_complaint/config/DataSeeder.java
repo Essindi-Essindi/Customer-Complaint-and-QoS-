@@ -1,16 +1,39 @@
 package customer_complaint.customer_complaint.config;
 
+// ============================================================================
+// To wipe all data and let this seeder repopulate the database from scratch
+// on the next restart, connect with your MySQL client and run this single
+// command (uncomment it first). Do NOT run this against a database you
+// care about — it deletes everything in these 8 tables.
+//
+// SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS attachments, notifications, resolutions, tickets, reports, complaints, categories, users; SET FOREIGN_KEY_CHECKS = 1;
+//
+// After running it, redeploy (or just restart the app) — Hibernate's
+// ddl-auto=update recreates the empty tables on boot, userRepository.count()
+// comes back 0, and this class seeds everything again automatically.
+// ============================================================================
+
 import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.model.Attachment;
 import customer_complaint.customer_complaint.model.CameroonLocations;
 import customer_complaint.customer_complaint.model.Category;
 import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Manager;
+import customer_complaint.customer_complaint.model.Notification;
+import customer_complaint.customer_complaint.model.Report;
+import customer_complaint.customer_complaint.model.Resolution;
 import customer_complaint.customer_complaint.model.Subscriber;
 import customer_complaint.customer_complaint.model.User;
 import customer_complaint.customer_complaint.model.enums.ComplaintStatus;
+import customer_complaint.customer_complaint.model.enums.NotificationStatus;
+import customer_complaint.customer_complaint.model.enums.ReportType;
 import customer_complaint.customer_complaint.model.enums.ServiceType;
+import customer_complaint.customer_complaint.repository.AttachmentRepository;
 import customer_complaint.customer_complaint.repository.CategoryRepository;
 import customer_complaint.customer_complaint.repository.ComplaintRepository;
+import customer_complaint.customer_complaint.repository.NotificationRepository;
+import customer_complaint.customer_complaint.repository.ReportRepository;
+import customer_complaint.customer_complaint.repository.ResolutionRepository;
 import customer_complaint.customer_complaint.repository.UserRepository;
 import customer_complaint.customer_complaint.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +44,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +53,7 @@ import java.util.Random;
 /**
  * Fills a freshly-created (empty) database with test data — every account's
  * password is "123456789" — so the app is immediately explorable after a
- * `DROP DATABASE` + restart instead of landing on a blank dashboard with no
+ * table wipe + restart instead of landing on a blank dashboard with no
  * heatmap data. Only runs once: guarded on {@code userRepository.count() ==
  * 0}, so it's a no-op the moment any real registration or manager-created
  * account exists. Can be turned off entirely via app.seed-data=false in
@@ -42,6 +66,10 @@ import java.util.Random;
  * synthetic data. Region totals are deliberately spread across every bucket
  * of CameroonHeatMap.tsx's fixed scale (0-5 / 6-10 / 11-15 / 16-20 / 21+) so
  * the map actually shows the full white-to-red range instead of one color.
+ * <p>
+ * Attachments, notifications, resolutions, and reports (10 rows each) are
+ * seeded off the generated complaints/managers/agents so every table has
+ * data, not just users/categories/complaints/tickets.
  */
 @Component
 @RequiredArgsConstructor
@@ -54,6 +82,10 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
     private final ComplaintRepository complaintRepository;
+    private final AttachmentRepository attachmentRepository;
+    private final NotificationRepository notificationRepository;
+    private final ResolutionRepository resolutionRepository;
+    private final ReportRepository reportRepository;
     private final TicketService ticketService;
     private final PasswordEncoder passwordEncoder;
 
@@ -90,10 +122,14 @@ public class DataSeeder implements CommandLineRunner {
         List<Manager> managers = seedManagers();
         List<Agent> agents = seedAgents();
         List<Subscriber> subscribers = seedSubscribers();
-        seedComplaints(categories, agents, subscribers);
+        List<Complaint> complaints = seedComplaints(categories, agents, subscribers);
+        seedAttachments(complaints);
+        seedNotifications(complaints);
+        seedResolutions(complaints, agents);
+        seedReports(managers);
 
-        log.info("DataSeeder: done — {} managers, {} agents, {} subscribers seeded",
-                managers.size(), agents.size(), subscribers.size());
+        log.info("DataSeeder: done — {} managers, {} agents, {} subscribers, {} complaints seeded (plus 10 rows each of attachments/notifications/resolutions/reports)",
+                managers.size(), agents.size(), subscribers.size(), complaints.size());
     }
 
     private List<Category> seedCategories() {
@@ -126,9 +162,6 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private List<Agent> seedAgents() {
-        // (region, serviceType) pairs — deliberately covers the regions
-        // carrying the most seeded complaints below, so the agent/manager
-        // dashboards have someone plausible to assign/claim work.
         List<Object[]> defs = List.of(
                 new Object[] { "Centre", ServiceType.MOBILE },
                 new Object[] { "Centre", ServiceType.ADSL },
@@ -171,7 +204,8 @@ public class DataSeeder implements CommandLineRunner {
         return saved;
     }
 
-    private void seedComplaints(List<Category> categories, List<Agent> agents, List<Subscriber> subscribers) {
+    private List<Complaint> seedComplaints(List<Category> categories, List<Agent> agents, List<Subscriber> subscribers) {
+        List<Complaint> savedComplaints = new ArrayList<>();
         ServiceType[] serviceTypes = ServiceType.values();
         ComplaintStatus[] statuses = ComplaintStatus.values();
 
@@ -181,8 +215,6 @@ public class DataSeeder implements CommandLineRunner {
             List<String> towns = CameroonLocations.townsByRegion().get(region);
 
             for (int i = 0; i < count; i++) {
-                // ~10% of the time exercise the "Other" escape hatch instead
-                // of a real listed city, same as a real subscriber could pick.
                 String city = RANDOM.nextInt(10) == 0
                         ? CameroonLocations.OTHER
                         : towns.get(RANDOM.nextInt(towns.size()));
@@ -217,14 +249,9 @@ public class DataSeeder implements CommandLineRunner {
                 complaint.setStatus(status);
                 complaint.setTicketNumber(ticketService.nextTicketNumber());
 
-                // Spread over the last 30 days so it falls inside
-                // ManagerHeatmap's default date range out of the box.
                 LocalDateTime createdAt = LocalDateTime.now().minusDays(RANDOM.nextInt(30)).minusHours(RANDOM.nextInt(24));
                 complaint.setCreatedAt(createdAt);
 
-                // Anything past SUBMITTED implies an agent claimed it —
-                // pick one whose assignedService matches, falling back to
-                // any agent if none match this complaint's service type.
                 if (status != ComplaintStatus.SUBMITTED && !agents.isEmpty()) {
                     Agent agent = agents.stream()
                             .filter(a -> serviceType.name().equals(a.getAssignedService()))
@@ -234,9 +261,87 @@ public class DataSeeder implements CommandLineRunner {
                     complaint.setUpdatedAt(createdAt.plusHours(1 + RANDOM.nextInt(48)));
                 }
 
-                complaintRepository.save(complaint);
-                ticketService.generateFor(complaint);
+                Complaint saved = complaintRepository.save(complaint);
+                ticketService.generateFor(saved);
+                savedComplaints.add(saved);
             }
+        }
+        return savedComplaints;
+    }
+
+    private void seedAttachments(List<Complaint> complaints) {
+        String[] fileTypes = { "image/jpeg", "image/png", "application/pdf" };
+        int n = Math.min(10, complaints.size());
+        for (int i = 0; i < n; i++) {
+            Complaint complaint = complaints.get(i);
+            Attachment a = new Attachment();
+            a.setComplaint(complaint);
+            a.setFileName("evidence-" + (i + 1) + "." + (i % 3 == 2 ? "pdf" : "jpg"));
+            a.setFileType(fileTypes[i % fileTypes.length]);
+            a.setFilePath("attachments/seed/evidence-" + (i + 1));
+            a.setUploadedAt(complaint.getCreatedAt().plusMinutes(2));
+            attachmentRepository.save(a);
+        }
+    }
+
+    private void seedNotifications(List<Complaint> complaints) {
+        String[] types = { "SMS", "EMAIL" };
+        int n = Math.min(10, complaints.size());
+        for (int i = 0; i < n; i++) {
+            Complaint complaint = complaints.get(i);
+            Notification note = new Notification();
+            note.setRecipient(complaint.getSubscriber());
+            note.setComplaint(complaint);
+            note.setMessage("Your complaint " + complaint.getTicketNumber() + " has been received.");
+            note.setType(types[i % types.length]);
+            note.setStatus(NotificationStatus.SENT);
+            note.setSentAt(complaint.getCreatedAt().plusMinutes(5));
+            notificationRepository.save(note);
+        }
+    }
+
+    private void seedResolutions(List<Complaint> complaints, List<Agent> agents) {
+        List<Complaint> pool = complaints.stream()
+                .filter(c -> c.getStatus() == ComplaintStatus.RESOLVED)
+                .toList();
+        if (pool.size() < 10) {
+            pool = complaints;
+        }
+        int n = Math.min(10, pool.size());
+        for (int i = 0; i < n; i++) {
+            Complaint complaint = pool.get(i);
+            Resolution r = new Resolution();
+            r.setComplaint(complaint);
+            r.setResolvedBy(agents.isEmpty() ? null : agents.get(i % agents.size()));
+            r.setNote("Issue diagnosed and resolved on site.");
+            r.setResolvedAt(complaint.getUpdatedAt() != null ? complaint.getUpdatedAt() : complaint.getCreatedAt());
+            r.setRating(3 + (i % 3));
+            r.setRatingComment("Resolved satisfactorily.");
+            resolutionRepository.save(r);
+        }
+    }
+
+    private void seedReports(List<Manager> managers) {
+        if (managers.isEmpty()) {
+            return;
+        }
+        ReportType[] types = ReportType.values();
+        LocalDate today = LocalDate.now();
+        for (int i = 0; i < 10; i++) {
+            Report r = new Report();
+            r.setGeneratedBy(managers.get(i % managers.size()));
+            ReportType type = types[i % types.length];
+            r.setType(type);
+            if (type == ReportType.WEEKLY) {
+                r.setStartDate(today.minusWeeks(i + 1));
+                r.setEndDate(today.minusWeeks(i));
+            } else {
+                r.setStartDate(today.minusMonths(i + 1));
+                r.setEndDate(today.minusMonths(i));
+            }
+            r.setGeneratedAt(LocalDateTime.now().minusDays(i));
+            r.setFilePath("reports/seed/report-" + (i + 1) + ".pdf");
+            reportRepository.save(r);
         }
     }
 }
