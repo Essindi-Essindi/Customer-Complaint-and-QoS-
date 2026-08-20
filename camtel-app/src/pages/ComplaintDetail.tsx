@@ -9,6 +9,7 @@ import { useI18n } from '../context/I18nContext';
 import { COMPLAINT_STATUSES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 import { OTHER } from '../lib/cameroonLocations';
 import { ChevronLeftIcon } from '../components/icons';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 
 // GET /api/complaints/track/{ticketNumber} returns the full ComplaintResponse:
 // id, ticketNumber, type, serviceType, region, city, locality, description,
@@ -51,6 +52,14 @@ export default function ComplaintDetail() {
       cancelled = true;
     };
   }, [ticketNumber, t]);
+
+  // Auto-refresh: the assigned agent or a manager can move this ticket's
+  // status forward at any time, so re-poll every 5s to reflect it live
+  // instead of the subscriber having to reload the page.
+  useAutoRefresh(() => {
+    if (!ticketNumber) return;
+    complaintsApi.track(ticketNumber).then(setComplaint).catch(() => {});
+  });
 
   if (loading) {
     return (

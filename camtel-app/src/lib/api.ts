@@ -516,6 +516,31 @@ export interface AgentImportResultResponse {
   rows: AgentImportRowResult[];
 }
 
+// ---------------------------------------------------------------------------
+// In-app notifications (all roles) — NotificationController (/api/notifications)
+// Polled by NotificationContext every ~5s. Distinct from the SMS/email
+// Notification entity on the backend — this one is bell/toast only.
+// ---------------------------------------------------------------------------
+
+// dto/response/AppNotificationResponse.java
+export interface AppNotificationResponse {
+  id: number;
+  type: string;
+  message: string;
+  ticketNumber: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export const notificationsApi = {
+  // since: ISO LocalDateTime cursor — omit for the initial page (most recent
+  // ~30), pass the last-seen createdAt to fetch only what's new.
+  list: (since?: string) => request<AppNotificationResponse[]>('/notifications', { query: { since } }),
+  unreadCount: () => request<number>('/notifications/unread-count'),
+  markRead: (id: number) => request<void>(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => request<void>('/notifications/read-all', { method: 'PATCH' }),
+};
+
 export const usersApi = {
   list: (role?: Role, page = 0, size = 20) =>
       request<SpringPage<UserResponse>>('/manager/users', { query: { role, page, size } }),

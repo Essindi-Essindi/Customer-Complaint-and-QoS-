@@ -1,6 +1,7 @@
 package customer_complaint.customer_complaint.repository;
 
 import customer_complaint.customer_complaint.model.Agent;
+import customer_complaint.customer_complaint.model.Manager;
 import customer_complaint.customer_complaint.model.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // All active agents assigned to a particular service
     @Query("SELECT a FROM Agent a WHERE a.assignedService = :service AND a.active = true")
     List<Agent> findActiveAgentsByService(@Param("service") String service);
+
+    // Managers aren't scoped to a region/service, so "notify the manager" on
+    // a manager-relevant complaint event means every active manager.
+    @Query("SELECT m FROM Manager m WHERE m.active = true")
+    List<Manager> findActiveManagers();
 
     // Paginated user list, optionally filtered by role — backs the manager
     // user-management page. `role` isn't a mapped @Column (it's User's

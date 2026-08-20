@@ -6,6 +6,7 @@ import { StatusBadge } from '../components/StatusBadge';
 import { complaintsApi, ApiError } from '../lib/api';
 import type { ComplaintListItemResponse } from '../lib/api';
 import { useI18n } from '../context/I18nContext';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 
 // GET /api/complaints/mine returns ComplaintListItemResponse rows: id,
 // ticketNumber, type, status, region, createdAt. There's no service/city/
@@ -19,6 +20,7 @@ export default function MyComplaints() {
 
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
     complaintsApi
       .listMine()
       .then((data) => {
@@ -34,6 +36,13 @@ export default function MyComplaints() {
       cancelled = true;
     };
   }, [t]);
+
+  // Auto-refresh: an agent/manager can move a status forward at any time —
+  // re-fetch quietly every 5s so the list stays current without a manual
+  // reload. Skips the loading spinner on these background ticks.
+  useAutoRefresh(() => {
+    complaintsApi.listMine().then(setComplaints).catch(() => {});
+  });
 
   return (
     <div className="page">

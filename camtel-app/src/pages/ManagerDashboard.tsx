@@ -32,6 +32,7 @@ import {
 } from '../lib/constants';
 import { useI18n } from '../context/I18nContext';
 import { Link } from 'react-router-dom';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 
 const PAGE_SIZE = 10;
 
@@ -95,9 +96,11 @@ export default function ManagerDashboard() {
   const [lookupError, setLookupError] = useState('');
 
   // ── Load complaint rows ───────────────────────────────────────────────────
-  const loadRows = useCallback(() => {
-    setRowsLoading(true);
-    setRowsError('');
+  // silent=true (the 5s auto-refresh tick) skips the loading-spinner flip so
+  // the table doesn't blank out from under a manager reading it.
+  const loadRows = useCallback((silent = false) => {
+    if (!silent) setRowsLoading(true);
+    if (!silent) setRowsError('');
     managerComplaintsApi
         .list({
           type: appliedFilters.type || undefined,
@@ -114,13 +117,17 @@ export default function ManagerDashboard() {
           setTotalPages(res.totalPages);
           setTotalElements(res.totalElements);
         })
-        .catch((err) =>
-            setRowsError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'))
-        )
-        .finally(() => setRowsLoading(false));
+        .catch((err) => {
+          if (!silent) setRowsError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
+        })
+        .finally(() => { if (!silent) setRowsLoading(false); });
   }, [appliedFilters, page, t]);
 
   useEffect(() => { loadRows(); }, [loadRows]);
+
+  // Any agent/manager action (claim, assign, resolve) elsewhere in the app
+  // can change this table — keep it live without reloading the page.
+  useAutoRefresh(() => loadRows(true));
 
   // ── Load KPIs / patterns once ─────────────────────────────────────────────
   useEffect(() => {

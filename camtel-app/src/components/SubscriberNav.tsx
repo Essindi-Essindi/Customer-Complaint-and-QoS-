@@ -3,6 +3,7 @@ import { ListChecks, FilePlus2, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from './SettingsControls';
+import { NotificationBell } from './NotificationBell';
 import camtelLogo from '../assets/camtel-logo.png';
 
 export function SubscriberNav() {
@@ -31,6 +32,7 @@ export function SubscriberNav() {
           <FilePlus2 size={15} />
           {t('nav.submitComplaint')}
         </Link>
+        <NotificationBell />
         <SettingsControls />
         <button type="button" className="btn btn-outline" onClick={handleLogout}>
           <LogOut size={14} />

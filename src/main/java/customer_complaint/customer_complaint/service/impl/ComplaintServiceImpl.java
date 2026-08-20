@@ -20,6 +20,7 @@ import customer_complaint.customer_complaint.repository.CategoryRepository;
 import customer_complaint.customer_complaint.repository.ComplaintRepository;
 import customer_complaint.customer_complaint.repository.ComplaintSpecifications;
 import customer_complaint.customer_complaint.repository.UserRepository;
+import customer_complaint.customer_complaint.service.AppNotificationService;
 import customer_complaint.customer_complaint.service.ComplaintService;
 import customer_complaint.customer_complaint.service.NotificationService;
 import customer_complaint.customer_complaint.service.ResolutionService;
@@ -46,6 +47,7 @@ public class ComplaintServiceImpl implements ComplaintService {
     private final TicketService ticketService;
     private final NotificationService notificationService;
     private final ResolutionService resolutionService;
+    private final AppNotificationService appNotificationService;
 
     @Override
     public ComplaintResponse submit(Long subscriberId, ComplaintSubmissionRequest request) {
@@ -79,6 +81,11 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaintRepository.save(complaint);
         ticketService.generateFor(complaint);
         notificationService.notifyTicketCreated(complaint);
+
+        appNotificationService.notifyUser(subscriber, complaint, "COMPLAINT_SUBMITTED",
+                "Your complaint " + complaint.getTicketNumber() + " has been received.");
+        appNotificationService.notifyManagers(complaint, "COMPLAINT_SUBMITTED",
+                "New complaint " + complaint.getTicketNumber() + " submitted (" + complaint.getType() + ").");
 
         return toResponse(complaint);
     }
@@ -158,6 +165,17 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
 
         notificationService.notifyStatusChanged(complaint);
+
+        appNotificationService.notifyUser(complaint.getSubscriber(), complaint, "STATUS_CHANGED",
+                "Your complaint " + complaint.getTicketNumber() + " is now " + newStatus + ".");
+
+        if (newStatus == ComplaintStatus.RESOLVED) {
+            String agentName = complaint.getAgent() != null ? complaint.getAgent().getName() : null;
+            appNotificationService.notifyManagers(complaint, "COMPLAINT_RESOLVED",
+                    "Complaint " + complaint.getTicketNumber() + " was resolved"
+                            + (agentName != null ? " by " + agentName : "") + ".");
+        }
+
         return toResponse(complaint);
     }
 
@@ -185,6 +203,11 @@ public class ComplaintServiceImpl implements ComplaintService {
         // only ever fired from submit() and updateStatus().
         notificationService.notifyStatusChanged(complaint);
 
+        appNotificationService.notifyUser(complaint.getSubscriber(), complaint, "STATUS_CHANGED",
+                "Your complaint " + complaint.getTicketNumber() + " is now " + complaint.getStatus() + ".");
+        appNotificationService.notifyManagers(complaint, "COMPLAINT_CLAIMED",
+                "Agent " + agent.getName() + " claimed complaint " + complaint.getTicketNumber() + ".");
+
         return toResponse(complaint);
     }
 
@@ -208,6 +231,11 @@ public class ComplaintServiceImpl implements ComplaintService {
         // other path that can produce ASSIGNED without ever notifying.
         notificationService.notifyStatusChanged(complaint);
 
+        appNotificationService.notifyUser(agent, complaint, "COMPLAINT_ASSIGNED",
+                "You have been assigned complaint " + complaint.getTicketNumber() + ".");
+        appNotificationService.notifyUser(complaint.getSubscriber(), complaint, "STATUS_CHANGED",
+                "Your complaint " + complaint.getTicketNumber() + " is now " + complaint.getStatus() + ".");
+
         return toResponse(complaint);
     }
 
@@ -221,6 +249,12 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
 
         resolutionService.rate(complaintId, request.getScore(), request.getComment());
+
+        if (complaint.getAgent() != null) {
+            appNotificationService.notifyUser(complaint.getAgent(), complaint, "COMPLAINT_RATED",
+                    "Your resolution for complaint " + complaint.getTicketNumber()
+                            + " was rated " + request.getScore() + "/5.");
+        }
     }
 
     private ServiceType parseServiceType(String raw) {

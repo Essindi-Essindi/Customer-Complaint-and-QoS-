@@ -2137,3 +2137,151 @@ a:hover {
   gap: 8px;
   flex-wrap: wrap;
 }
+
+/* Notification bell — sits next to SettingsControls in SubscriberNav /
+   StaffHeader. */
+.notification-bell {
+  position: relative;
+}
+.notification-bell__trigger {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  background: none;
+  border: 1px solid var(--border-strong);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color 0.2s var(--ease), background 0.2s var(--ease), transform 0.2s var(--ease);
+}
+.notification-bell__trigger:hover {
+  color: var(--text);
+  background: rgba(var(--tint), 0.06);
+  transform: translateY(-1px);
+}
+.notification-bell__badge {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 17px;
+  text-align: center;
+  box-shadow: 0 0 0 2px var(--panel-solid);
+}
+.notification-bell__panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-strong);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lift);
+  z-index: 200;
+  animation: pop-in 0.2s var(--ease) both;
+  overflow: hidden;
+}
+.notification-bell__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+}
+.notification-bell__markall {
+  background: none;
+  border: none;
+  color: var(--primary-light);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.notification-bell__markall:hover {
+  text-decoration: underline;
+}
+.notification-bell__empty {
+  padding: 20px 14px;
+  color: var(--muted);
+  font-size: 0.85rem;
+  text-align: center;
+}
+.notification-bell__list {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  overflow-y: auto;
+}
+.notification-bell__item {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s var(--ease);
+}
+.notification-bell__item:hover {
+  background: rgba(var(--tint), 0.06);
+}
+.notification-bell__item p {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.notification-bell__item.unread {
+  background: rgba(47, 143, 255, 0.08);
+}
+.notification-bell__item.unread p {
+  color: var(--text);
+  font-weight: 600;
+}
+.notification-bell__item.unread {
+  position: relative;
+}
+.notification-bell__item.unread::before {
+  content: '';
+  position: absolute;
+  left: 3px;
+  top: 16px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary-light);
+}
+.notification-bell__time {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* Toast popups stack bottom-right, newest at the bottom, instead of the
+   single fixed-position .toast overlapping itself. */
+.notification-toaster {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 10px;
+  align-items: flex-end;
+}
+.notification-toaster .toast {
+  position: static;
+}

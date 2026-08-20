@@ -1,10 +1,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { GuestRoute } from './components/GuestRoute';
 import { PwaUpdatePrompt } from './components/PwaUpdatePrompt';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { PwaInstallButton } from './components/PwaInstallButton';
+import { NotificationToaster } from './components/NotificationToaster';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
 import Login from './pages/Login';
@@ -24,11 +26,13 @@ import ManagerConfig from './pages/ManagerConfig';
 export default function App() {
   return (
     <AuthProvider>
-      <PwaUpdatePrompt />
-      <PwaInstallPrompt />
-      <PwaInstallButton />
-      <BrowserRouter>
-        <Routes>
+      <NotificationProvider>
+        <PwaUpdatePrompt />
+        <PwaInstallPrompt />
+        <PwaInstallButton />
+        <NotificationToaster />
+        <BrowserRouter>
+          <Routes>
           <Route
             path="/register"
             element={
@@ -151,8 +155,9 @@ export default function App() {
 
           <Route path="/" element={<Navigate to="/welcome" replace />} />
           <Route path="*" element={<Navigate to="/welcome" replace />} />
-        </Routes>
-      </BrowserRouter>
+          </Routes>
+        </BrowserRouter>
+      </NotificationProvider>
     </AuthProvider>
   );
 }

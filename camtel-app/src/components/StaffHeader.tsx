@@ -3,6 +3,7 @@ import { LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useI18n } from '../context/I18nContext';
 import { SettingsControls } from './SettingsControls';
+import { NotificationBell } from './NotificationBell';
 import { SERVICE_TYPE_LABELS } from '../lib/constants';
 import type { ServiceTypeValue } from '../lib/constants';
 
@@ -38,6 +39,7 @@ export function StaffHeader() {
                 <span className="dept-badge">{departmentLabel}</span>
             )}
             {role === 'MANAGER' && <span className="staff-datetime">{now}</span>}
+            <NotificationBell />
             <SettingsControls className="staff-header-controls" />
             <button type="button" className="btn btn-outline btn-sm" onClick={handleLogout}>
                 <LogOut size={14} />
