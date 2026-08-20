@@ -1,5 +1,7 @@
 package customer_complaint.customer_complaint.service.impl;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import customer_complaint.customer_complaint.model.Complaint;
 import customer_complaint.customer_complaint.model.Subscriber;
 import customer_complaint.customer_complaint.model.enums.ComplaintStatus;
@@ -8,28 +10,39 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 
 // Sends every subscriber-facing email in the app: registration verification
 // codes, the welcome email once verified, and complaint status updates.
 // Every method is @Async and swallows its own exceptions (logging instead)
-// so a slow/unreachable SMTP server can never turn a 200-worthy business
+// so a slow/unreachable email provider can never turn a 200-worthy business
 // operation (register, submit a complaint, change its status) into a 500 -
 // the same "best-effort side channel" principle NotificationServiceImpl
 // already applies to SMS.
+//
+// Sends over Brevo's transactional email HTTP API (plain HTTPS) rather than
+// SMTP, since Render's free tier blocks outbound SMTP ports.
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
 
     private static final Logger log = LoggerFactory.getLogger(EmailServiceImpl.class);
+    private static final URI BREVO_EMAIL_URI = URI.create("https://api.brevo.com/v3/smtp/email");
 
-    private final JavaMailSender mailSender;
+    private final HttpClient httpClient = HttpClient.newHttpClient();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Value("${app.mail.from}")
     private String fromAddress;
+
+    @Value("${brevo.api-key}")
+    private String brevoApiKey;
 
     @Override
     @Async("emailTaskExecutor")
@@ -109,12 +122,24 @@ public class EmailServiceImpl implements EmailService {
 
     private void send(String to, String subject, String body) {
         try {
-            SimpleMailMessage message = new SimpleMailMessage();
-            message.setFrom(fromAddress);
-            message.setTo(to);
-            message.setSubject(subject);
-            message.setText(body);
-            mailSender.send(message);
+            ObjectNode payload = objectMapper.createObjectNode();
+            payload.putObject("sender").put("email", fromAddress);
+            payload.putArray("to").addObject().put("email", to);
+            payload.put("subject", subject);
+            payload.put("textContent", body);
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(BREVO_EMAIL_URI)
+                    .header("api-key", brevoApiKey)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json")
+                    .POST(HttpRequest.BodyPublishers.ofString(objectMapper.writeValueAsString(payload)))
+                    .build();
+
+            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() < 200 || response.statusCode() >= 300) {
+                log.warn("Could not send email to {} - Brevo returned {}: {}", to, response.statusCode(), response.body());
+            }
         } catch (Exception ex) {
             log.warn("Could not send email to {} - {}", to, ex.getMessage());
         }
