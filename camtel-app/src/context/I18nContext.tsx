@@ -405,6 +405,12 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   },
   'pwa.install': { en: 'Install', fr: 'Installer' },
   'pwa.installCta': { en: 'Install app', fr: 'Installer l’appli' },
+
+  // In-app notifications
+  'notif.bellLabel': { en: 'Notifications', fr: 'Notifications' },
+  'notif.title': { en: 'Notifications', fr: 'Notifications' },
+  'notif.markAllRead': { en: 'Mark all read', fr: 'Tout marquer comme lu' },
+  'notif.empty': { en: "You're all caught up", fr: 'Vous êtes à jour' },
 };
 
 interface I18nContextType {

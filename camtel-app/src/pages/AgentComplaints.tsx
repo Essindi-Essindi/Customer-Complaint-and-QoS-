@@ -12,6 +12,7 @@ import { COMPLAINT_STATUSES, SERVICE_TYPE_LABELS, type ComplaintStatusValue, typ
 import { OTHER } from '../lib/cameroonLocations';
 import { useI18n } from '../context/I18nContext';
 import { useAuth } from '../context/AuthContext';
+import { useAutoRefresh } from '../lib/useAutoRefresh';
 
 type Tab = 'service' | 'mine';
 
@@ -48,30 +49,37 @@ export default function AgentComplaints() {
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
 
-  const refreshService = () => {
-    setServiceLoading(true);
+  // silent=true skips the loading-spinner flip, used by the 5s auto-refresh
+  // tick below so it doesn't blank the table out from under the user.
+  const refreshService = (silent = false) => {
+    if (!silent) setServiceLoading(true);
     agentComplaintsApi
         .listServiceComplaints()
         .then(setServiceComplaints)
-        .catch((err) => setServiceError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
-        .finally(() => setServiceLoading(false));
+        .catch((err) => { if (!silent) setServiceError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')); })
+        .finally(() => { if (!silent) setServiceLoading(false); });
   };
 
-  const refreshMine = () => {
-    setMyLoading(true);
+  const refreshMine = (silent = false) => {
+    if (!silent) setMyLoading(true);
     agentComplaintsApi
         .listAssigned()
         .then(setMyComplaints)
-        .catch((err) => setMyError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')))
-        .finally(() => setMyLoading(false));
+        .catch((err) => { if (!silent) setMyError(err instanceof ApiError ? err.message : t('common.somethingWentWrong')); })
+        .finally(() => { if (!silent) setMyLoading(false); });
   };
 
-  const refreshAll = () => {
-    refreshService();
-    refreshMine();
+  const refreshAll = (silent = false) => {
+    refreshService(silent);
+    refreshMine(silent);
   };
 
-  useEffect(refreshAll, [t]);
+  useEffect(() => refreshAll(), [t]);
+
+  // Other agents/managers can claim, assign or resolve complaints in this
+  // service at any time — silently refresh both tabs every 5s so the tables
+  // stay live without a manual reload or a loading-spinner flicker.
+  useAutoRefresh(() => refreshAll(true));
 
   const open = (c: ComplaintListItemResponse) => {
     setSelected(c);
