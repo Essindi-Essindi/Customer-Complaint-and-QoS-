@@ -45,7 +45,10 @@ public class AppNotification {
     @Column(name = "ticket_number", length = 50)
     private String ticketNumber;
 
-    @Column(nullable = false)
+    // Explicit column name: `read` is a reserved word in MySQL (used in
+    // LOCK TABLES ... READ), so leaving Hibernate to default the column
+    // name to `read` breaks the CREATE/ALTER TABLE DDL under ddl-auto=update.
+    @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
     @Column(name = "created_at", nullable = false, updatable = false)
