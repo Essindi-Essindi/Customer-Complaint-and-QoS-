@@ -11,13 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
-// Read-only category list for the complaint submission form. Deliberately a
-// separate controller from CategoryController: that one is mapped under
-// /api/manager/categories, which SecurityConfig locks to hasRole('MANAGER')
-// at the URL level, so a subscriber can never reach it no matter what
-// @PreAuthorize says. This lives outside /api/manager/** instead, so
-// whatever categories a manager creates/edits/deletes on the configuration
-// page are immediately reflected here too — same CategoryService, same data.
+// endpoint setup
 @RestController
 @RequestMapping("/api/categories")
 @RequiredArgsConstructor

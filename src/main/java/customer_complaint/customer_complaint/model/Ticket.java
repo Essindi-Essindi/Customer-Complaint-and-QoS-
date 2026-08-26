@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// ticket record generated for a complaint
+// entity model
 @Entity
 @Table(name = "tickets")
 @Getter

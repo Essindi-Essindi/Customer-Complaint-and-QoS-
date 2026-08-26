@@ -7,7 +7,7 @@ import customer_complaint.customer_complaint.model.Report;
 
 import java.util.List;
 
-// pdf report generation
+// handle service logic
 public interface ReportService {
 
     ReportResponse requestGeneration(Long managerId, ReportGenerationRequest request);
@@ -16,9 +16,6 @@ public interface ReportService {
 
     Report getReportForDownload(Long reportId);
 
-    // Every report this manager has ever generated, newest first — the
-    // report-history table on ManagerReports.tsx used to only ever show
-    // what was generated in the current browser session; this is what
-    // makes it survive a refresh/new session.
+    // fetch data
     List<ReportResponse> listForManager(Long managerId);
 }

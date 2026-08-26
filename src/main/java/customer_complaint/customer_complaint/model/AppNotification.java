@@ -7,10 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// in-app notification shown to a subscriber/agent/manager while they're on
-// the site (bell + toast) — separate from Notification, which is the SMS
-// delivery queue. This one has no delivery pipeline, just a read flag; the
-// frontend polls GET /api/notifications every few seconds.
+// entity model
 @Entity
 @Table(name = "app_notifications", indexes = {
         @Index(name = "idx_app_notif_recipient", columnList = "recipient_id"),
@@ -33,21 +30,18 @@ public class AppNotification {
     @JoinColumn(name = "complaint_id")
     private Complaint complaint;
 
-    // e.g. COMPLAINT_SUBMITTED, COMPLAINT_ASSIGNED, COMPLAINT_CLAIMED,
-    // STATUS_CHANGED, COMPLAINT_RESOLVED, COMPLAINT_RATED
+    // entity field
     @Column(nullable = false, length = 50)
     private String type;
 
     @Column(nullable = false, columnDefinition = "TEXT")
     private String message;
 
-    // Denormalized so the frontend can show/link the ticket without a join.
+    // helper field
     @Column(name = "ticket_number", length = 50)
     private String ticketNumber;
 
-    // Explicit column name: `read` is a reserved word in MySQL (used in
-    // LOCK TABLES ... READ), so leaving Hibernate to default the column
-    // name to `read` breaks the CREATE/ALTER TABLE DDL under ddl-auto=update.
+    // column mapping
     @Column(name = "is_read", nullable = false)
     private boolean read = false;
 

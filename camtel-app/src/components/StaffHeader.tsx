@@ -7,9 +7,7 @@ import { NotificationBell } from './NotificationBell';
 import { SERVICE_TYPE_LABELS } from '../lib/constants';
 import type { ServiceTypeValue } from '../lib/constants';
 
-// Shows the logged-in user's name, role badge, their service/department, the
-// current date-time for managers, and logout — same top-right position as
-// SubscriberNav's, rather than the sidebar bottom it used to live in.
+// staff header bar
 export function StaffHeader() {
     const { name, role, department, logout } = useAuth();
     const navigate = useNavigate();
@@ -24,8 +22,7 @@ export function StaffHeader() {
         timeStyle: 'short',
     });
 
-    // For agents, department == assignedService (e.g. "MOBILE").
-    // Translate it to the human label when possible.
+    // format department label
     const departmentLabel =
         role === 'AGENT' && department
             ? (SERVICE_TYPE_LABELS[department as ServiceTypeValue]?.[lang] ?? department)

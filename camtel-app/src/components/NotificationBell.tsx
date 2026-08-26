@@ -3,9 +3,7 @@ import { Bell } from 'lucide-react';
 import { useNotifications } from '../context/NotificationContext';
 import { useI18n } from '../context/I18nContext';
 
-// Bell + unread badge + dropdown of recent in-app notifications. Shared by
-// SubscriberNav and StaffHeader — same component for all three roles, the
-// content is just whatever NotificationContext has fetched for that user.
+// notification bell
 export function NotificationBell() {
   const { notifications, unreadCount, markRead, markAllRead } = useNotifications();
   const { t, lang } = useI18n();

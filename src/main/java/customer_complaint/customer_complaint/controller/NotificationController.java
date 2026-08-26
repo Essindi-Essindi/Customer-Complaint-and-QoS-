@@ -12,11 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// In-app notifications for whichever actor is logged in — subscriber, agent
-// or manager. Not restricted to a role: SecurityConfig falls through to
-// .anyRequest().authenticated() for this path, so any signed-in account can
-// read its own feed. The frontend polls GET / every ~5s using `since` as a
-// cursor to only pull what's new.
+// endpoint setup
 @RestController
 @RequestMapping("/api/notifications")
 @RequiredArgsConstructor

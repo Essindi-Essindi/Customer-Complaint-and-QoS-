@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
-// body for POST /api/manager/complaints/{id}/assign
+// request payload
 @Getter
 @Setter
 public class AssignAgentRequest {

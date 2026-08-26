@@ -14,13 +14,7 @@ import {
 } from '../lib/constants';
 import { TOWNS_BY_REGION, LOCALITIES_BY_CITY, OTHER } from '../lib/cameroonLocations';
 
-// Fields map 1:1 to dto/request/ComplaintSubmissionRequest.java:
-// idempotencyKey, type, serviceType, region, city, locality, description,
-// categoryId. The complaint-type picker is populated from GET /api/categories
-// (SubscriberCategoryController), which mirrors whatever the manager has
-// configured on the Configuration page — no more hardcoded type list. `type`
-// (the free-text field the backend still requires) is derived from the
-// chosen category's name at submit time; `categoryId` carries the actual FK.
+// key generator helper
 function newIdempotencyKey() {
   return crypto.randomUUID();
 }
@@ -61,31 +55,20 @@ export default function SubmitComplaint() {
 
   const set = (k: keyof FormState, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  // Changing region invalidates whatever city (and by extension locality)
-  // was picked for the old one — TOWNS_BY_REGION's lists don't overlap, so
-  // neither is ever valid for a newly-picked region.
+  // region change handler
   const setRegion = (region: string) => setForm((f) => ({ ...f, region, city: '', locality: '' }));
 
-  // Changing city invalidates whatever locality was picked for the old one,
-  // same reasoning.
+  // city change handler
   const setCity = (city: string) => setForm((f) => ({ ...f, city, locality: '' }));
 
-  // OTHER is always offered on both — the subscriber's escape hatch when
-  // their real city/locality isn't in the curated list, at which point the
-  // description placeholder below asks them to name it there instead.
+  // city options list
   const cityOptions = form.region ? [...(TOWNS_BY_REGION[form.region] ?? []), OTHER] : [];
-  // Only rendered once a real city (not OTHER) is picked — there's nothing
-  // to cascade a locality list from otherwise. Every curated city still
-  // ends its list with OTHER; a city with no curated list at all (most of
-  // them — see cameroonLocations.ts) just offers OTHER alone.
+  // locality options list
   const localityOptions =
     form.city && form.city !== OTHER ? [...(LOCALITIES_BY_CITY[form.city] ?? []), OTHER] : [];
   const showLocality = form.city !== '' && form.city !== OTHER;
 
-  // Whenever the subscriber picked OTHER for city or locality, there's no
-  // structured location data for that part — the description is the only
-  // place that information can still reach an agent, so it stops being
-  // optional in that case.
+  // description required flag
   const descriptionRequired = form.city === OTHER || form.locality === OTHER;
   const descriptionPlaceholder =
     form.city === OTHER
@@ -129,8 +112,7 @@ export default function SubmitComplaint() {
       });
       setResult(res);
       setToast(t('submit.success'));
-      // A fresh key means the next submit creates a new complaint instead of
-      // being deduplicated against this one.
+      // reset key value
       setIdempotencyKey(newIdempotencyKey());
       setForm(emptyForm);
       setErrors({});

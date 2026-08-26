@@ -8,7 +8,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-// manager crud on subscribers/agents
+// handle service logic
 public interface UserManagementService {
 
     UserResponse createUser(UserCreateRequest request);
@@ -19,8 +19,6 @@ public interface UserManagementService {
 
     Page<UserResponse> listUsers(String role, Pageable pageable);
 
-    // Bulk-creates AGENT accounts from an .xlsx "annuaire" (Name, Surname,
-    // Service, Region, Password[, Phone]) — see
-    // UserManagementServiceImpl.importAgents for the row-by-row contract.
+    // process request
     AgentImportResultResponse importAgents(MultipartFile file);
 }

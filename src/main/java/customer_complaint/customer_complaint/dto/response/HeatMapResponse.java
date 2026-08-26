@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-// one point on the heat map
+// map data point
 @Getter
 @Setter
 @AllArgsConstructor

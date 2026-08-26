@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// complaint category, e.g. billing, network
+// entity model
 @Entity
 @Table(name = "categories")
 @Getter

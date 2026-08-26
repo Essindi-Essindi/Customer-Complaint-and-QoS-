@@ -2,15 +2,13 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useI18n } from '../context/I18nContext';
 
 interface PaginationProps {
-  page: number; // 0-indexed
+  page: number; // page value
   totalPages: number;
   totalElements: number;
   onChange: (page: number) => void;
 }
 
-// Identical prev/page-label/next pattern used on ManagerDashboard,
-// ManagerHeatmap, and ManagerUsers — pulled out once so the three copies
-// can't drift, and so the chevron icons only need to be designed here.
+// pagination controls
 export function Pagination({ page, totalPages, totalElements, onChange }: PaginationProps) {
   const { t } = useI18n();
 

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for rating a resolved complaint
+// request payload
 @Getter
 @Setter
 public class RatingRequest {

@@ -1,9 +1,6 @@
 import { useEffect, useRef } from 'react';
 
-// Google's public TEST site key — pairs with the test secret key already in
-// application.properties (captcha.secret-key). Always verifies successfully,
-// so it's safe for local dev. Override with VITE_RECAPTCHA_SITE_KEY once a
-// real site key is issued for staging/production.
+// default site key
 const RECAPTCHA_SITE_KEY: string =
   (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_RECAPTCHA_SITE_KEY ||
   '6LeIxAcTAAAAAJcZVRqyHh71UMIEGNQ_MXjiZKhI';

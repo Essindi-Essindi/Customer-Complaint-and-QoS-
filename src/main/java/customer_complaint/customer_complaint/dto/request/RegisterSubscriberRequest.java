@@ -7,11 +7,7 @@ import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for subscriber sign up.
-// email and phone are each individually optional — the frontend lets the
-// subscriber pick email-only, phone-only, or both via a contact-method
-// selector — but @EmailOrPhoneRequired rejects the request if neither is
-// present.
+// registration request payload
 @Getter
 @Setter
 @EmailOrPhoneRequired

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-// user info returned to client, no password
+// build response
 @Getter
 @Setter
 @AllArgsConstructor

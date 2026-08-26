@@ -7,7 +7,7 @@
 }
 
 :root {
-  /* Camtel liquid-glass palette: fiber-signal blues + cyan/violet glow on a deep night canvas */
+  /* color palette setup */
   --primary: #2f8fff;
   --primary-light: #6fb6ff;
   --primary-dark: #0b5cab;
@@ -22,9 +22,7 @@
   --text-dim: #c2cbdd;
   --muted: #8b96ad;
 
-  /* --tint is the RGB triplet mixed into translucent glass surfaces.
-     White in night mode, ink in day mode — swapping it re-themes every
-     rgba(var(--tint), x) surface below without touching each rule. */
+  /* tint variable note */
   --tint: 255, 255, 255;
 
   --card: rgba(var(--tint), 0.055);
@@ -33,12 +31,7 @@
   --border-strong: rgba(var(--tint), 0.24);
   --highlight: rgba(var(--tint), 0.5);
   --overlay: rgba(3, 6, 14, 0.55);
-  /* Fully opaque elevated surface — --card-strong (9% white tint) is the
-     "liquid glass" look meant for large background panels, but it leaves
-     modals and sticky headers see-through against whatever scrolls behind
-     them, which hurts readability. Anything that needs to stay legible no
-     matter what's underneath (modal dialogs, the dashboard headers) uses
-     this instead — zero transparency, not just "less". */
+  /* solid panel note */
   --panel-solid: #101f3d;
 
   --danger: #ff6b6b;
@@ -58,10 +51,7 @@
   color-scheme: dark;
 }
 
-/* ---------- Day theme ---------- */
-/* Same fiber-signal blue/cyan/violet identity, rebuilt for a bright canvas
-   instead of overriding the night palette 1:1 — glass needs an ink tint,
-   not a lighter white tint, or every "frosted" surface goes chalky. */
+/* ---------- light theme ---------- */
 [data-theme='light'] {
   --primary: #1f6fe0;
   --primary-light: #2f8fff;
@@ -108,13 +98,7 @@ html {
   scroll-behavior: smooth;
 }
 
-/* ---------- Theme switch cross-fade (View Transitions API) ----------
-   ThemeContext wraps the theme flip in document.startViewTransition, which
-   snapshots the page before/after and hands us these pseudo-elements to
-   animate between. Overriding the browser's default 0.25s crossfade with our
-   own duration/easing keeps the fade in the same rhythm as the rest of the
-   UI (--ease). Unsupported browsers (Firefox, older Safari) just never get
-   these pseudo-elements — the theme still flips, only the fade is missing. */
+/* ---------- theme switch transition ---------- */
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.55s;
@@ -140,7 +124,7 @@ html {
   }
 }
 
-/* ---------- Themed scrollbar ---------- */
+/* ---------- scrollbar styling ---------- */
 * {
   scrollbar-width: thin;
   scrollbar-color: var(--border-strong) transparent;
@@ -184,7 +168,7 @@ h3,
   font-family: 'Manrope', 'Inter', system-ui, sans-serif;
 }
 
-/* ---------- Ambient liquid backdrop (pure CSS, no markup changes) ---------- */
+/* ---------- background backdrop ---------- */
 body::before,
 body::after {
   content: '';
@@ -227,8 +211,7 @@ body::after {
   animation: drift-c 34s var(--ease) infinite alternate;
 }
 
-/* Day theme: same drifting blobs read as soft daylight glow instead of
-   neon — same shapes and colors keep the identity, opacity does the work. */
+/* light theme opacity note */
 [data-theme='light'] body::before,
 [data-theme='light'] body::after {
   opacity: 0.22;
@@ -284,9 +267,7 @@ a:hover {
   text-decoration: underline;
 }
 
-/* A <button> styled to sit inline with the `a` rules above — used where an
-   action (e.g. resending a code) isn't navigation, so it can't be a real
-   link, but should still look like the surrounding auth-footer links. */
+/* link-styled button */
 .link-btn {
   background: none;
   border: none;
@@ -305,7 +286,7 @@ a:hover {
   cursor: default;
 }
 
-/* ---------- Glass surface base ---------- */
+/* ---------- surface base styles ---------- */
 .auth-card,
 .form-card,
 .table-wrap,
@@ -948,8 +929,7 @@ a:hover {
   color: var(--muted);
   font-size: 0.85rem;
 }
-/* Pushes settings + logout to the header's right edge — same right-aligned
-   position as SubscriberNav's .nav-actions. */
+/* header alignment note */
 .staff-header-controls {
   margin-left: auto;
 }
@@ -1273,12 +1253,7 @@ a:hover {
   border-color: var(--border-strong);
 }
 
-/* ---------- Entrance stagger ----------
-   Shared 30ms-per-item cadence across every list-like surface that animates
-   in on mount (KPI tiles, role picker, reply templates, table rows) so the
-   whole app reveals with one consistent rhythm instead of popping in at
-   once. Capped at item 9 — beyond that the delay would make long tables
-   feel sluggish to read. */
+/* ---------- entrance stagger ---------- */
 .kpi-card:nth-child(1),
 .role-option:nth-child(1),
 .template-card:nth-child(1),
@@ -1382,10 +1357,7 @@ a:hover {
   font-size: 0.95rem;
 }
 
-/* Choropleth map of Cameroon's 10 regions — ManagerHeatmap.tsx. Region fills
-   are computed inline (per-count sequential-ramp color, from CameroonHeatMap.tsx)
-   since they're data-driven; this just handles layout, the hover/focus
-   affordance, and the legend strip. */
+/* map styling note */
 .cameroon-map {
   display: flex;
   flex-direction: column;
@@ -1694,9 +1666,7 @@ a:hover {
   .sidebar {
     width: 100%;
   }
-  /* A vertically-stacked nav list eats the whole screen above the fold on
-     mobile before any actual page content shows — turned into a horizontal
-     scrollable pill bar instead, same idea as a mobile tab bar. */
+  /* mobile nav layout note */
   .sidebar-nav {
     display: flex;
     overflow-x: auto;
@@ -1730,7 +1700,7 @@ a:hover {
 }
 
 /* ==========================================================================
-   Theme toggle, language toggle, role-select — added for day/night + EN/FR
+   settings controls section
    ========================================================================== */
 
 .settings-controls {
@@ -1835,7 +1805,7 @@ a:hover {
   animation: pop-in 0.3s var(--ease) both;
 }
 
-/* ---------- Role select landing page ---------- */
+/* ---------- landing page styles ---------- */
 .role-select-card {
   padding: 40px;
   width: 100%;
@@ -1932,7 +1902,7 @@ a:hover {
   transform: translateX(3px);
 }
 
-/* ---------- Auth cross-links (customer <-> staff) ---------- */
+/* ---------- auth links styles ---------- */
 .auth-role-switch {
   margin-top: 18px;
   padding-top: 14px;
@@ -1965,7 +1935,7 @@ a:hover {
   }
 }
 
-/* --- shims for backend-alignment additions not covered above --- */
+/* --- misc extra styles --- */
 .claim-form {
   max-width: 480px;
   display: flex;
@@ -1994,7 +1964,7 @@ a:hover {
   font-size: 0.85em;
 }
 
-/* --- dept-badge: agent service / manager department in header --- */
+/* --- badge styles --- */
 .dept-badge {
   display: inline-block;
   padding: 3px 10px;
@@ -2012,7 +1982,7 @@ a:hover {
   color: #4ade80;
 }
 
-/* --- agent dashboard tabs --- */
+/* --- tabs styles --- */
 .tab-bar {
   display: flex;
   gap: 4px;
@@ -2062,7 +2032,7 @@ a:hover {
   padding-top: 20px;
 }
 
-/* ── Agent assignment block inside manager modal ──────────────────────────── */
+/* ── assignment block styles ──────────────────────────── */
 .assign-block {
   margin-top: 20px;
   padding: 14px 16px;
@@ -2089,7 +2059,7 @@ a:hover {
   margin-bottom: 8px;
 }
 
-/* ── Password field show/hide toggle (PasswordInput.tsx) ──────────────────── */
+/* ── password field styles ──────────────────── */
 .password-field {
   position: relative;
 }
@@ -2119,7 +2089,7 @@ a:hover {
   background: rgba(var(--tint), 0.08);
 }
 
-/* Confirm sub-panel */
+/* confirm panel styles */
 .assign-confirm {
   margin-top: 10px;
   padding: 12px 14px;
@@ -2138,8 +2108,7 @@ a:hover {
   flex-wrap: wrap;
 }
 
-/* Notification bell — sits next to SettingsControls in SubscriberNav /
-   StaffHeader. */
+/* bell placement note */
 .notification-bell {
   position: relative;
 }
@@ -2270,8 +2239,7 @@ a:hover {
   color: var(--muted);
 }
 
-/* Toast popups stack bottom-right, newest at the bottom, instead of the
-   single fixed-position .toast overlapping itself. */
+/* toast stacking note */
 .notification-toaster {
   position: fixed;
   bottom: 24px;

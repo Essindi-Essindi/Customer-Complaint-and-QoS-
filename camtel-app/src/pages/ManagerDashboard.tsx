@@ -39,7 +39,7 @@ const PAGE_SIZE = 10;
 export default function ManagerDashboard() {
   const { t, lang } = useI18n();
 
-  // ── KPIs / patterns ──────────────────────────────────────────────────────
+  // ── kpi state ──────────────────────────────────────────────────────
   const [kpis, setKpis] = useState<KpiResponse[]>([]);
   const [patterns, setPatterns] = useState<RecurringPatternResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +47,7 @@ export default function ManagerDashboard() {
   const [dismissedPatterns, setDismissedPatterns] = useState<Set<number>>(new Set());
   const [toast, setToast] = useState<string | null>(null);
 
-  // ── Complaint table ───────────────────────────────────────────────────────
+  // ── table state ───────────────────────────────────────────────────────
   const [rows, setRows] = useState<ComplaintManagerListItemResponse[]>([]);
   const [rowsLoading, setRowsLoading] = useState(true);
   const [rowsError, setRowsError] = useState('');
@@ -70,19 +70,14 @@ export default function ManagerDashboard() {
     end: '',
   });
 
-  // ── Modal / detail ────────────────────────────────────────────────────────
-  // Always fetched fresh via agentComplaintsApi.getByTicket() (city,
-  // locality, description, sender name/email/phone, assigned agent — the
-  // full picture) rather than reused from the list row, so a direct ticket
-  // lookup (no row involved at all) shows exactly the same detail as
-  // opening one from the table.
+  // ── modal state ────────────────────────────────────────────────────────
   const [found, setFound] = useState<ComplaintStaffDetailResponse | null>(null);
   const [modalError, setModalError] = useState('');
   const [status, setStatus] = useState<ComplaintStatusValue>('SUBMITTED');
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // ── Agent assignment ──────────────────────────────────────────────────────
+  // ── assignment state ──────────────────────────────────────────────────────
   const [agents, setAgents] = useState<AgentWithLoadResponse[]>([]);
   const [agentsLoading, setAgentsLoading] = useState(false);
   const [selectedAgentId, setSelectedAgentId] = useState<number | null>(null);
@@ -90,14 +85,12 @@ export default function ManagerDashboard() {
   const [assigning, setAssigning] = useState(false);
   const [assignError, setAssignError] = useState('');
 
-  // ── Ticket lookup (manual) ────────────────────────────────────────────────
+  // ── lookup state ────────────────────────────────────────────────
   const [lookupTicket, setLookupTicket] = useState('');
   const [looking, setLooking] = useState(false);
   const [lookupError, setLookupError] = useState('');
 
-  // ── Load complaint rows ───────────────────────────────────────────────────
-  // silent=true (the 5s auto-refresh tick) skips the loading-spinner flip so
-  // the table doesn't blank out from under a manager reading it.
+  // ── load rows ───────────────────────────────────────────────────
   const loadRows = useCallback((silent = false) => {
     if (!silent) setRowsLoading(true);
     if (!silent) setRowsError('');
@@ -125,11 +118,10 @@ export default function ManagerDashboard() {
 
   useEffect(() => { loadRows(); }, [loadRows]);
 
-  // Any agent/manager action (claim, assign, resolve) elsewhere in the app
-  // can change this table — keep it live without reloading the page.
+  // auto-refresh setup
   useAutoRefresh(() => loadRows(true));
 
-  // ── Load KPIs / patterns once ─────────────────────────────────────────────
+  // ── load kpis ─────────────────────────────────────────────
   useEffect(() => {
     Promise.all([analyticsApi.kpis('type'), analyticsApi.recurringPatterns()])
         .then(([k, p]) => { setKpis(k); setPatterns(p); })
@@ -139,7 +131,7 @@ export default function ManagerDashboard() {
         .finally(() => setLoading(false));
   }, [t]);
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // ── helper functions ───────────────────────────────────────────────────────────────
   const loadAgents = (serviceType: string) => {
     setAgentsLoading(true);
     setAgents([]);
@@ -220,9 +212,7 @@ export default function ManagerDashboard() {
         newStatus: status,
         resolutionNote: note.trim() || undefined,
       });
-      // updateStatus() only returns the lean ComplaintResponse shape — refetch
-      // the full staff detail so `found` stays fully populated (sender,
-      // locality, description) rather than narrowing after a save.
+      // refetch detail data
       const refreshed = await agentComplaintsApi.getByTicket(found.ticketNumber);
       setFound(refreshed);
       setToast(t('common.updateSaved'));
@@ -244,7 +234,7 @@ export default function ManagerDashboard() {
       setConfirmAssign(false);
       setSelectedAgentId(null);
       loadRows();
-      // Refresh agent load counts in the dropdown
+      // refresh agent list
       if (found.serviceType) loadAgents(found.serviceType);
     } catch (err) {
       setAssignError(err instanceof ApiError ? err.message : t('common.somethingWentWrong'));
@@ -253,7 +243,7 @@ export default function ManagerDashboard() {
     }
   };
 
-  // ── Derived values ────────────────────────────────────────────────────────
+  // ── computed values ────────────────────────────────────────────────────────
   const totalComplaints = kpis.reduce((s, k) => s + k.totalComplaints, 0);
   const resolvedComplaints = kpis.reduce((s, k) => s + k.resolvedComplaints, 0);
   const weightedAvgHours =
@@ -265,7 +255,7 @@ export default function ManagerDashboard() {
   const visiblePatterns = patterns.filter((_, i) => !dismissedPatterns.has(i));
   const selectedAgent = agents.find((a) => a.id === selectedAgentId) ?? null;
 
-  // ── Render ────────────────────────────────────────────────────────────────
+  // ── render output ────────────────────────────────────────────────────────────────
   return (
       <div className="staff-layout">
         <StaffSidebar variant="manager" />
@@ -276,7 +266,7 @@ export default function ManagerDashboard() {
 
             {error && <div className="banner error">{error}</div>}
 
-            {/* Recurring pattern banners */}
+            {/* pattern banners */}
             {visiblePatterns.map((p) => {
               const idx = patterns.indexOf(p);
               return (
@@ -328,7 +318,7 @@ export default function ManagerDashboard() {
               <Link to="/manager/users" className="btn btn-outline btn-sm">{t('sidebar.users')}</Link>
             </div>
 
-            {/* ── All complaints table ── */}
+            {/* ── complaints table ── */}
             <h2 style={{ marginTop: 32 }}>{t('dashboard.allComplaints')}</h2>
 
             <form onSubmit={applyFilters} className="filters-bar">
@@ -426,7 +416,7 @@ export default function ManagerDashboard() {
                 </>
             )}
 
-            {/* ── Ticket lookup ── */}
+            {/* ── lookup form ── */}
             <h2 style={{ marginTop: 32 }}>{t('dashboard.lookupTitle')}</h2>
             <form onSubmit={handleLookup} className="form-card claim-form">
               <div className="field">
@@ -447,11 +437,11 @@ export default function ManagerDashboard() {
           </main>
         </div>
 
-        {/* ── Complaint detail modal ── */}
+        {/* ── detail modal ── */}
         {found && (
             <Modal title={found.ticketNumber} onClose={closeModal} wide>
 
-              {/* Detail grid */}
+              {/* grid layout */}
               <div className="detail-grid">
                 <div>
                   <strong>{t('common.complaintType')}</strong>
@@ -497,7 +487,7 @@ export default function ManagerDashboard() {
 
               {modalError && <div className="banner error" style={{ margin: '0 0 12px' }}>{modalError}</div>}
 
-              {/* ── Agent assignment block ── */}
+              {/* ── assignment block ── */}
               <div className="assign-block">
                 <p className="assign-block__title">{t('assign.title')}</p>
 

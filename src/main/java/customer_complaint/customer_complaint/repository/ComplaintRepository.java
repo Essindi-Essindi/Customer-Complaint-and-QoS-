@@ -12,13 +12,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-// queries backing the dashboard filters.
-// JpaSpecificationExecutor backs GET /api/manager/complaints, which lists
-// and filters every complaint (see ComplaintSpecifications).
+// query helpers
 public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
         JpaSpecificationExecutor<Complaint> {
 
-    // Enforces duplicate-submission protection at the query level
+    // custom finder
     Optional<Complaint> findByIdempotencyKey(String idempotencyKey);
 
     Optional<Complaint> findByTicketNumber(String ticketNumber);
@@ -36,10 +34,10 @@ public interface ComplaintRepository extends JpaRepository<Complaint, Long>,
 
     List<Complaint> findByCreatedAtBetween(LocalDateTime start, LocalDateTime end);
 
-    // All complaints for a given service type — used by agent dashboard "service" tab
+    // custom finder
     List<Complaint> findByServiceType(ServiceType serviceType);
 
-    // Count of non-resolved complaints per agent — used to compute agent load badge
+    // count query
     @Query("SELECT COUNT(c) FROM Complaint c WHERE c.agent.id = :agentId AND c.status <> 'RESOLVED'")
     long countActiveByAgentId(@Param("agentId") Long agentId);
 }

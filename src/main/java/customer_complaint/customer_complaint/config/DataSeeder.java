@@ -1,16 +1,7 @@
 package customer_complaint.customer_complaint.config;
 
 // ============================================================================
-// To wipe all data and let this seeder repopulate the database from scratch
-// on the next restart, connect with your MySQL client and run this single
-// command (uncomment it first). Do NOT run this against a database you
-// care about — it deletes everything in these 8 tables.
-//
-// SET FOREIGN_KEY_CHECKS = 0; DROP TABLE IF EXISTS attachments, notifications, resolutions, tickets, reports, complaints, categories, users; SET FOREIGN_KEY_CHECKS = 1;
-//
-// After running it, redeploy (or just restart the app) — Hibernate's
-// ddl-auto=update recreates the empty tables on boot, userRepository.count()
-// comes back 0, and this class seeds everything again automatically.
+// reset instructions
 // ============================================================================
 
 import customer_complaint.customer_complaint.model.Agent;
@@ -77,7 +68,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
     private static final String PASSWORD = "123456789";
-    private static final Random RANDOM = new Random(42); // fixed seed - reproducible seed data
+    private static final Random RANDOM = new Random(42); // fixed value
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -92,8 +83,7 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${app.seed-data:true}")
     private boolean seedEnabled;
 
-    // region -> how many complaints to generate — spans every heatmap
-    // bucket (0-5 white, 6-10 green, 11-15 yellow, 16-20 orange, 21+ red).
+    // sample data
     private static final List<Object[]> REGION_COUNTS = List.of(
             new Object[] { "Centre", 24 },
             new Object[] { "Littoral", 18 },

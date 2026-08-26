@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.exception;
 
-// thrown on bad login
+// custom exception
 public class InvalidCredentialsException extends RuntimeException {
 
     public InvalidCredentialsException(String message) {

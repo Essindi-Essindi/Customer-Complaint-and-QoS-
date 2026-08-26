@@ -14,13 +14,7 @@ import { PasswordInput } from '../components/PasswordInput';
 import { SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 import camtelLogo from '../assets/camtel-logo.png';
 
-// Every field here maps 1:1 to dto/request/RegisterSubscriberRequest.java:
-// name, email, phone, password, camtelAccountNumber, serviceType. email and
-// phone are each optional on that DTO — @EmailOrPhoneRequired only rejects
-// the request if neither is present — so contactMethod is a frontend-only
-// concept that decides which of the two field(s) to show and send.
-// There is no captcha token field on that DTO, so nothing captcha-related is
-// sent to the backend even though a placeholder widget is shown.
+// form type definitions
 type ContactMethod = 'EMAIL' | 'PHONE' | 'BOTH' | '';
 
 interface FormState {
@@ -55,10 +49,7 @@ export default function Register() {
   const [toast, setToast] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [captchaToken, setCaptchaToken] = useState('');
-  // Set right after a successful email registration to pop the verify-code
-  // modal open on top of this same page, instead of navigating away to
-  // /verify-email — the code the user just got by email is only useful for
-  // a few minutes, so keeping them in place removes a click and a page load.
+  // verify modal state
   const [verifyEmail, setVerifyEmail] = useState<string | null>(null);
   const resetRecaptchaRef = useRef<() => void>(() => {});
 
@@ -106,10 +97,7 @@ export default function Register() {
         captchaToken,
       });
       if (res.emailVerificationRequired) {
-        // No token yet — res.token is null until the code is confirmed, so
-        // there's nothing for AuthContext.login() to do here. Pop the code
-        // form open right on this page instead of navigating to
-        // /verify-email — see verifyEmail state above.
+        // show verify modal
         setToast(t('register.checkEmail'));
         setVerifyEmail(form.email.trim());
       } else {
@@ -125,9 +113,7 @@ export default function Register() {
   };
 
   const handleVerified = (res: AuthResponse) => {
-    // A successful verify-email always carries a real token — this is the
-    // point the account actually becomes usable, so log straight in rather
-    // than sending them to /login to type their password again.
+    // log in directly
     login(res);
     setVerifyEmail(null);
     setToast(t('verify.success'));

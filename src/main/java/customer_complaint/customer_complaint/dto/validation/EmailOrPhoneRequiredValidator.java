@@ -10,7 +10,7 @@ public class EmailOrPhoneRequiredValidator
     @Override
     public boolean isValid(RegisterSubscriberRequest request, ConstraintValidatorContext context) {
         if (request == null) {
-            return true; // not this validator's job — @NotNull would cover it
+            return true; // handled elsewhere
         }
         boolean hasEmail = request.getEmail() != null && !request.getEmail().isBlank();
         boolean hasPhone = request.getPhone() != null && !request.getPhone().isBlank();

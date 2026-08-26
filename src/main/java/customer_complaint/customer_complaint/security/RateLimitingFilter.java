@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RateLimitingFilter extends OncePerRequestFilter {
 
     private static final int MAX_REQUESTS_PER_WINDOW = 20;
-    private static final long WINDOW_MILLIS = 60_000; // 1 minute
+    private static final long WINDOW_MILLIS = 60_000; // set value
 
     private final ConcurrentHashMap<String, Window> requestWindows = new ConcurrentHashMap<>();
 

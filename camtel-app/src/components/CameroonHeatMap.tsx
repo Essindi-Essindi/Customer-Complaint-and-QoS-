@@ -2,33 +2,23 @@ import regionPaths from '../data/cameroon-region-paths.json';
 import { useTheme } from '../context/ThemeContext';
 import { useI18n } from '../context/I18nContext';
 
-// Region boundaries: geoBoundaries (CC-BY, https://www.geoboundaries.org,
-// dataset CMR-ADM1), simplified + reprojected into this SVG's viewBox by a
-// one-off script (see camtel-app/src/data/cameroon-region-paths.json).
-// geoBoundaries names two regions with a hyphen where this app's REGIONS
-// (constants.ts) uses a space — normalize once here rather than editing
-// either canonical list to match the other.
+// map region names
 const GEO_NAME_TO_REGION: Record<string, string> = {
   'North-West': 'North West',
   'South-West': 'South West',
 };
 
-// Fixed-threshold "traffic light" scale, per explicit request over the
-// relative/max-scaled sequential ramp this replaced: white -> green ->
-// yellow -> orange -> red as complaint count climbs, with the same 5 bucket
-// edges in both themes (0-5, 6-10, 11-15, 16-20, 20+) rather than a scale
-// that rescales itself against whatever the current max happens to be — two
-// snapshots with the same counts should always look the same color.
+// color buckets
 const BUCKETS: { max: number; light: string; dark: string }[] = [
-  { max: 5, light: '#f4f1ea', dark: '#2a2a24' }, // white/neutral — least
-  { max: 10, light: '#4ade80', dark: '#22c55e' }, // green
-  { max: 15, light: '#facc15', dark: '#eab308' }, // yellow
-  { max: 20, light: '#fb923c', dark: '#f97316' }, // orange
-  { max: Infinity, light: '#ef4444', dark: '#dc2626' }, // red — most
+  { max: 5, light: '#f4f1ea', dark: '#2a2a24' }, // low tier
+  { max: 10, light: '#4ade80', dark: '#22c55e' }, // next tier
+  { max: 15, light: '#facc15', dark: '#eab308' }, // mid tier
+  { max: 20, light: '#fb923c', dark: '#f97316' }, // higher tier
+  { max: Infinity, light: '#ef4444', dark: '#dc2626' }, // top tier
 ];
 
 interface CameroonHeatMapProps {
-  // region name (this app's spelling, e.g. "North West") -> complaint count
+  // counts by region
   counts: Map<string, number>;
 }
 

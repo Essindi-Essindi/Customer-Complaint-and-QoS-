@@ -9,7 +9,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// generated pdf report metadata
+// entity model
 @Entity
 @Table(name = "reports")
 @Getter

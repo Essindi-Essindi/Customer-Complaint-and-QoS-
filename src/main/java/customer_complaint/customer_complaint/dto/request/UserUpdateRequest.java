@@ -3,7 +3,7 @@ package customer_complaint.customer_complaint.dto.request;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for editing a user
+// request payload
 @Getter
 @Setter
 public class UserUpdateRequest {

@@ -13,8 +13,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
 
-// Verifies a Google reCAPTCHA token before a sensitive action (complaint
-// submission, registration, etc.) is allowed to proceed.
+// service setup
 @Service
 public class CaptchaValidationService {
 
@@ -33,9 +32,7 @@ public class CaptchaValidationService {
             return false;
         }
 
-        // Google's siteverify endpoint requires application/x-www-form-urlencoded,
-        // not a JSON body - RestTemplate.postForObject(url, map) sends JSON by
-        // default, so we build the request explicitly instead.
+        // build request
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
 
@@ -53,8 +50,7 @@ public class CaptchaValidationService {
             }
             return success;
         } catch (Exception ex) {
-            // If Google's endpoint is unreachable, fail closed (treat as invalid)
-            // rather than letting an exception surface as a raw 500.
+            // handle error
             log.error("Error calling reCAPTCHA verification endpoint", ex);
             return false;
         }

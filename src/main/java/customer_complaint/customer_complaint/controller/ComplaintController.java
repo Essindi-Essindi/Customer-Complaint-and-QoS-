@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// subscriber facing complaint endpoints
+// endpoint setup
 @RestController
 @RequestMapping("/api/complaints")
 @RequiredArgsConstructor

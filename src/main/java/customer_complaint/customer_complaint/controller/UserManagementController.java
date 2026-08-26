@@ -15,7 +15,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-// manager endpoints for user accounts
+// endpoint setup
 @RestController
 @RequestMapping("/api/manager/users")
 @RequiredArgsConstructor
@@ -40,10 +40,7 @@ public class UserManagementController {
         return ResponseEntity.noContent().build();
     }
 
-    // .xlsx "annuaire" bulk import — agents only (see
-    // UserManagementServiceImpl.importAgents). Partial success is normal:
-    // the response's per-row list is how the manager finds out which rows
-    // failed and why, not a 4xx for the whole request.
+    // handle upload
     @PostMapping("/import-agents")
     public ResponseEntity<AgentImportResultResponse> importAgents(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(userManagementService.importAgents(file));

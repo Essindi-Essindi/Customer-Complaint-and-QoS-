@@ -14,7 +14,7 @@ import org.springframework.data.domain.Pageable;
 import java.time.LocalDate;
 import java.util.List;
 
-// core complaint operations
+// handle service logic
 public interface ComplaintService {
 
     ComplaintResponse submit(Long subscriberId, ComplaintSubmissionRequest request);
@@ -23,27 +23,24 @@ public interface ComplaintService {
 
     List<ComplaintListItemResponse> listForAgent(Long agentId);
 
-    // All complaints for a service — shown in agent dashboard "service" tab
+    // fetch data
     List<ComplaintListItemResponse> listForService(String serviceType);
 
-    // manager-only: every complaint in the system, filtered and paginated
+    // fetch data
     Page<ComplaintManagerListItemResponse> listForManager(
             String type, String serviceType, String region, String status,
             LocalDate start, LocalDate end, Pageable pageable);
 
     ComplaintResponse track(String ticketNumber);
 
-    // Agent/manager-only — same lookup as track() but returns the subscriber's
-    // name/email/phone and assigned agent name too, which track() deliberately
-    // never does (it's public/unauthenticated — see ComplaintStaffDetailResponse's
-    // javadoc). Backs the agent "view" modal and the manager's ticket lookup.
+    // fetch data
     ComplaintStaffDetailResponse getStaffDetailByTicket(String ticketNumber);
 
     ComplaintResponse updateStatus(User actor, Long complaintId, ComplaintStatusUpdateRequest request);
 
     ComplaintResponse claim(Long complaintId, Long agentId);
 
-    // Manager assigns (or re-assigns) an agent to a complaint
+    // update record
     ComplaintResponse assignAgent(Long complaintId, Long agentId);
 
     void rate(Long complaintId, RatingRequest request);

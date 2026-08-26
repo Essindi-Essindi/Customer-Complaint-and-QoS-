@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// agent/manager complaint handling endpoints
+// endpoint setup
 @RestController
 @RequestMapping("/api/agent/complaints")
 @RequiredArgsConstructor
@@ -31,19 +31,13 @@ public class AgentComplaintController {
         return ResponseEntity.ok(complaintService.listForAgent(principal.getUser().getId()));
     }
 
-    // Full detail (sender name/email/phone, city, locality, description,
-    // assigned agent) for the "view" modal on both the agent complaints
-    // page and the manager dashboard's row-view/ticket-lookup — the class-level
-    // hasAnyRole('AGENT', 'MANAGER') above already covers both. Not the same
-    // response as GET /api/complaints/track/{ticketNumber}, which is public
-    // and therefore never carries subscriber PII.
+    // fetch details
     @GetMapping("/by-ticket/{ticketNumber}")
     public ResponseEntity<ComplaintStaffDetailResponse> getByTicket(@PathVariable String ticketNumber) {
         return ResponseEntity.ok(complaintService.getStaffDetailByTicket(ticketNumber));
     }
 
-    // All complaints for the service the logged-in agent is assigned to.
-    // Managers cannot call this (they use /api/manager/complaints instead).
+    // list complaints
     @PreAuthorize("hasRole('AGENT')")
     @GetMapping("/service")
     public ResponseEntity<List<ComplaintListItemResponse>> viewServiceComplaints(
@@ -55,7 +49,7 @@ public class AgentComplaintController {
         return ResponseEntity.ok(complaintService.listForService(agent.getAssignedService()));
     }
 
-    // Restricted to AGENT only (not MANAGER) because the service layer casts the caller to Agent.
+    // check role
     @PreAuthorize("hasRole('AGENT')")
     @PatchMapping("/{complaintId}/claim")
     public ResponseEntity<ComplaintResponse> claim(@PathVariable Long complaintId,

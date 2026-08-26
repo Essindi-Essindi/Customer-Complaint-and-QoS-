@@ -8,11 +8,7 @@ import { categoriesApi, ApiError } from '../lib/api';
 import type { Category } from '../lib/api';
 import { useI18n } from '../context/I18nContext';
 
-// GET/POST/PUT/DELETE /api/manager/categories is the only configuration the
-// backend actually exposes. The "Notification Templates" tab from the mock
-// version has nothing behind it — there's no Template entity, controller, or
-// service anywhere in the backend — so it's been removed rather than left as
-// dead UI that silently does nothing.
+// config page component
 export default function ManagerConfig() {
   const { t } = useI18n();
   const [categories, setCategories] = useState<Category[]>([]);

@@ -9,8 +9,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// Indexes match the design doc: region, status, serviceType, createdAt
-// core entity, one row per submitted complaint
+// entity model
 @Entity
 @Table(name = "complaints", indexes = {
         @Index(name = "idx_complaint_region", columnList = "region"),
@@ -61,9 +60,7 @@ public class Complaint {
     @Column(length = 100)
     private String city;
 
-    // Neighborhood/quarter within city — optional (not every city has a
-    // curated locality list, and the subscriber can pick "Other" here even
-    // when it does), so unlike region/city this is never required.
+    // entity field
     @Column(length = 100)
     private String locality;
 

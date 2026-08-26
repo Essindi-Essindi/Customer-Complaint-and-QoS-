@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for agent/manager status updates
+// request payload
 @Getter
 @Setter
 public class ComplaintStatusUpdateRequest {

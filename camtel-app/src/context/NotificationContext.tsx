@@ -4,11 +4,7 @@ import { notificationsApi } from '../lib/api';
 import type { AppNotificationResponse } from '../lib/api';
 import { useAuth } from './AuthContext';
 
-// In-app notifications for whichever actor is logged in (subscriber, agent,
-// manager) — polls GET /api/notifications every 5s using the last-seen
-// createdAt as a cursor, so it only ever pulls what's actually new. New
-// arrivals both land in the bell dropdown (`notifications`) and get queued
-// as toast popups (`popups`) so they're seen even without opening the bell.
+// notification polling setup
 const POLL_MS = 5000;
 const MAX_KEPT = 30;
 
@@ -38,9 +34,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
     let cancelled = false;
     const sinceRef = { current: null as string | null };
-    // The very first poll after login/reload just catches up on history
-    // (whatever's already sitting in the DB) — that shouldn't burst a wall
-    // of toasts. Only polls after that one count as "something just happened".
+    // first poll setup
     let isFirstPoll = true;
 
     const poll = () => {
@@ -59,7 +53,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           isFirstPoll = false;
         })
         .catch(() => {
-          /* a missed tick just retries in 5s */
+          /* retry later */
         });
     };
 
@@ -74,10 +68,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     };
   }, [isAuthenticated, userId]);
 
-  // Callers are expected to only invoke this for a currently-unread
-  // notification (the bell dropdown guards on `!n.read` before calling) —
-  // that keeps the decrement here unconditional and avoids a nested setState
-  // read-then-write across two different state variables.
+  // update state helper
   const markRead = useCallback((id: number) => {
     setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n)));
     setUnreadCount((c) => Math.max(0, c - 1));

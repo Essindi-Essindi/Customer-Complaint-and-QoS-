@@ -8,7 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.List;
 
-// wraps our User for spring security
+// class setup
 public class CustomUserDetails implements UserDetails {
 
     private final User user;
@@ -32,8 +32,7 @@ public class CustomUserDetails implements UserDetails {
         return user.getPasswordHash();
     }
 
-    // Email is no longer guaranteed (a subscriber can register phone-only),
-    // so fall back to phone, then the id, rather than ever returning null.
+    // check value
     @Override
     public String getUsername() {
         if (user.getEmail() != null) return user.getEmail();

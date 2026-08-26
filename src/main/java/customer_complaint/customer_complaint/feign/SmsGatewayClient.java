@@ -4,8 +4,8 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-// Declarative HTTP client for the outbound SMS provider
-// declarative client for the sms provider
+// client setup
+// external service call
 @FeignClient(name = "smsGatewayClient", url = "${sms.gateway.base-url}")
 public interface SmsGatewayClient {
 

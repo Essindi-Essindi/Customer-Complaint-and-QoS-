@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.io.Serializable;
 
-// message payload for the sms queue
+// event payload
 @Getter
 @Setter
 @NoArgsConstructor

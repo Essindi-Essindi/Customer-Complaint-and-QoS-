@@ -38,18 +38,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
-// creates/updates agents and managers
+// handle service logic
 @Service
 @RequiredArgsConstructor
 public class UserManagementServiceImpl implements UserManagementService {
 
-    // Column headers the .xlsx "annuaire" must have (case/accent/space
-    // insensitive — see normalizeHeader). Phone is deliberately not
-    // required: an agent logs in with the Email column, not a phone number,
-    // so a missing phone can't block the import. Email is provided as-is by
-    // whoever prepared the annuaire (expected format surname.name@camtel.com)
-    // — this importer never derives or rewrites it, only validates and
-    // stores it.
+    // config value
     private static final List<String> REQUIRED_COLUMNS =
             List.of("name", "surname", "email", "service", "region", "password");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
@@ -119,18 +113,11 @@ public class UserManagementServiceImpl implements UserManagementService {
 
     @Override
     public Page<UserResponse> listUsers(String role, Pageable pageable) {
-        // role already arrives uppercase from the frontend (Role type is
-        // 'SUBSCRIBER' | 'AGENT' | 'MANAGER'), matching the @DiscriminatorValue
-        // on each User subclass exactly, so it's passed straight through to
-        // the query rather than re-derived from a class name.
+        // fetch data
         return userRepository.findPageByRole(role, pageable).map(this::toResponse);
     }
 
-    // Bulk-creates AGENT accounts from a manager-uploaded .xlsx annuaire.
-    // Deliberately NOT @Transactional across the whole file: each row is
-    // saved (or not) on its own, so one bad row can't roll back every good
-    // row that came before it in the same file — the per-row try/catch below
-    // is what actually isolates failures, this just has to not undo that.
+    // process request
     @Override
     public AgentImportResultResponse importAgents(MultipartFile file) {
         if (file == null || file.isEmpty()) {
@@ -139,10 +126,7 @@ public class UserManagementServiceImpl implements UserManagementService {
 
         DataFormatter fmt = new DataFormatter();
         List<AgentImportRowResult> results = new ArrayList<>();
-        // So two rows in the *same* file that would collide with each other
-        // (not just with what's already in the database) are both caught,
-        // instead of the second one silently overwriting the first at save
-        // time.
+        // prepare data
         Set<String> emailsThisBatch = new HashSet<>();
         Set<String> phonesThisBatch = new HashSet<>();
         int imported = 0;
@@ -169,9 +153,9 @@ public class UserManagementServiceImpl implements UserManagementService {
 
             for (int r = 1; r <= sheet.getLastRowNum(); r++) {
                 Row row = sheet.getRow(r);
-                if (row == null || isBlankRow(row, fmt)) continue; // blank spacer rows don't count as failures
+                if (row == null || isBlankRow(row, fmt)) continue; // skip row
 
-                int humanRow = r + 1; // 1-based, matches what the row looks like in Excel
+                int humanRow = r + 1; // adjust index
                 String name = cellValue(row, colIndex.get("name"), fmt);
                 String surname = cellValue(row, colIndex.get("surname"), fmt);
                 String email = cellValue(row, colIndex.get("email"), fmt);
@@ -196,19 +180,12 @@ public class UserManagementServiceImpl implements UserManagementService {
                     }
                     ServiceType serviceType = parseServiceType(service);
 
-                    // The Email column is used exactly as written — this is
-                    // the login the agent is told to expect, so nothing here
-                    // rewrites or auto-suffixes it. A collision is a row
-                    // error instead, same as the manual "Create User" form.
+                    // check status
                     if (userRepository.existsByEmail(email) || !emailsThisBatch.add(email)) {
                         throw new IllegalArgumentException("Email already in use");
                     }
 
-                    // A phone that collides with an existing account or
-                    // another row in this same file is dropped rather than
-                    // failing the whole row — the agent logs in with the
-                    // Email column, never the phone, so this never blocks
-                    // "connect later on without any problem".
+                    // check status
                     String normalizedPhone = phone.isBlank() ? null : phone.trim();
                     if (normalizedPhone != null
                             && (userRepository.existsByPhone(normalizedPhone) || !phonesThisBatch.add(normalizedPhone))) {
@@ -241,10 +218,7 @@ public class UserManagementServiceImpl implements UserManagementService {
     private String cellValue(Row row, Integer colIndex, DataFormatter fmt) {
         if (colIndex == null) return "";
         Cell cell = row.getCell(colIndex);
-        // DataFormatter reads the cell's *displayed* value regardless of its
-        // underlying type — a password typed as "123456" or a phone number
-        // Excel silently turned numeric both come back as plain text, so
-        // neither loses a leading zero nor turns into scientific notation.
+        // fetch data
         return cell == null ? "" : fmt.formatCellValue(cell).trim();
     }
 

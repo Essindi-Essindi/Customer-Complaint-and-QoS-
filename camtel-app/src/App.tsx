@@ -41,9 +41,7 @@ export default function App() {
               </GuestRoute>
             }
           />
-          {/* Not wrapped in GuestRoute: it manages its own post-verify
-              navigation (login() + a brief success toast before redirecting),
-              which an immediate GuestRoute bounce would cut short. */}
+          {/* route setup */}
           <Route path="/verify-email" element={<VerifyEmail />} />
           <Route
             path="/login"

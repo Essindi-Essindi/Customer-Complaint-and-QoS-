@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// standard error body
+// error payload
 @Getter
 @Setter
 @AllArgsConstructor

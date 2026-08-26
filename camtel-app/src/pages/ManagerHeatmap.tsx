@@ -12,11 +12,7 @@ import { useI18n } from '../context/I18nContext';
 
 const PAGE_SIZE = 10;
 
-// GET /api/analytics/heatmap/regions (unpaginated, always every region —
-// feeds the map) and GET /api/analytics/heatmap (paginated region+city rows
-// — feeds the "by city" table) both take the same start/end/serviceType
-// filters and are always fetched together, so the map and table can never
-// show data from two different filter states.
+// date range helpers
 function defaultStart() {
   const d = new Date();
   d.setDate(d.getDate() - 30);
@@ -31,10 +27,7 @@ export default function ManagerHeatmap() {
   const [serviceType, setServiceType] = useState<ServiceTypeValue | ''>('');
   const [start, setStart] = useState(defaultStart);
   const [end, setEnd] = useState(defaultEnd);
-  // '' means the table's default order (most complaints first) — the sort
-  // itself happens on the backend, ahead of pagination, so "sort by region"
-  // actually groups same-region rows together across pages instead of just
-  // reordering whatever page happened to load.
+  // sort state note
   const [sortBy, setSortBy] = useState<'' | 'region' | 'city'>('');
 
   const [regionTotals, setRegionTotals] = useState<RegionTotalResponse[]>([]);
@@ -46,9 +39,7 @@ export default function ManagerHeatmap() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  // `silent` skips the loading state so the periodic auto-refresh below
-  // swaps the map's shading in place instead of flashing a spinner over it
-  // every 30s — only a manual Apply (or the very first load) shows one.
+  // load data helper
   const load = (opts: { silent?: boolean } = {}) => {
     if (!opts.silent) setLoading(true);
     setError('');
@@ -68,9 +59,7 @@ export default function ManagerHeatmap() {
       });
   };
 
-  // Reloads whenever a filter or the table page changes, then keeps polling
-  // in the background so the map/table reflect newly-submitted complaints
-  // without the manager having to hit Apply again.
+  // reload and poll setup
   useEffect(() => {
     load();
     const id = setInterval(() => load({ silent: true }), 30000);
@@ -80,7 +69,7 @@ export default function ManagerHeatmap() {
 
   const handleApply = (ev: FormEvent) => {
     ev.preventDefault();
-    setPage(0); // a new filter invalidates whatever page we were on
+    setPage(0); // reset page
     load();
   };
 

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 
-// saves the resolution note and timestamp
+// handle service logic
 @Service
 @RequiredArgsConstructor
 public class ResolutionServiceImpl implements ResolutionService {
@@ -20,10 +20,7 @@ public class ResolutionServiceImpl implements ResolutionService {
     private final ResolutionRepository resolutionRepository;
     private final UserRepository userRepository;
 
-    // FIX: previously always `new Resolution()` and inserted. Resolution.complaint is a @OneToOne
-    // join column, unique by default - resolving the same complaint a second time (status
-    // corrected, reopened and re-resolved, or just re-running this test) collided with that
-    // constraint and threw a 500. Now it updates the existing row if one's already there.
+    // save record
     @Override
     public void resolve(Complaint complaint, Long resolvedByUserId, String note) {
         Resolution resolution = resolutionRepository.findByComplaintId(complaint.getId())

@@ -2,9 +2,7 @@ import { Modal } from './Modal';
 import { usePwaInstall } from '../context/PwaInstallContext';
 import { useI18n } from '../context/I18nContext';
 
-// Auto-opens once per browser session (see PwaInstallContext) shortly after
-// the app becomes installable, or immediately on iOS. Also reused as the
-// on-demand dialog when PwaInstallButton is clicked later.
+// install prompt dialog
 export function PwaInstallPrompt() {
   const { t } = useI18n();
   const { promptOpen, closePrompt, canInstall, isIos, promptInstall } = usePwaInstall();

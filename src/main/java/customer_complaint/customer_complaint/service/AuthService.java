@@ -6,16 +6,14 @@ import customer_complaint.customer_complaint.dto.request.ResendVerificationReque
 import customer_complaint.customer_complaint.dto.request.VerifyEmailRequest;
 import customer_complaint.customer_complaint.dto.response.AuthResponse;
 
-// register, login, and email verification
+// handle auth logic
 public interface AuthService {
 
     AuthResponse register(RegisterSubscriberRequest request);
 
     AuthResponse login(LoginRequest request);
 
-    // Confirms the code emailed during registration and, on success, issues
-    // a token the same way login() does — verification is effectively the
-    // last step of registration for an email-registered account.
+    // check status
     AuthResponse verifyEmail(VerifyEmailRequest request);
 
     void resendVerificationCode(ResendVerificationRequest request);

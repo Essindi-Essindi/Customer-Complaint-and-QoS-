@@ -5,8 +5,7 @@ import lombok.Getter;
 
 import java.util.List;
 
-// Summary + per-row detail for one agent annuaire import — see
-// UserManagementServiceImpl.importAgents.
+// import summary details
 @Getter
 @AllArgsConstructor
 public class AgentImportResultResponse {

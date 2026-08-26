@@ -1,28 +1,7 @@
-// Canonical region -> city -> locality data for Cameroon, used to populate
-// the region -> city -> locality cascading dropdowns on complaint
-// submission and to keep those three values homogeneous in the database (no
-// more free-typed spelling variants breaking the heatmap's grouping).
-// Mirrors src/main/java/.../model/CameroonLocations.java exactly — keep
-// both in sync by hand if either changes, there's no shared source of truth
-// across the Java/TypeScript boundary.
-//
-// OTHER is the shared "not in the list" escape hatch, always offered as the
-// last option for both city and locality — picking it is expected to come
-// with the real place named in the complaint description instead (see
-// SubmitComplaint.tsx's dynamic placeholder).
+// location data setup
 export const OTHER = 'Other';
 
-// Cities are each region's chief town (the regional capital) followed by
-// every one of that region's official department (département) capitals,
-// sourced from:
-//   - Region list + capitals: https://en.wikipedia.org/wiki/Regions_of_Cameroon
-//   - Department list per region: https://en.wikipedia.org/wiki/Departments_of_Cameroon
-//   - Department capitals cross-checked individually via Wikipedia/citypopulation.de
-//     (see the trickier ones: Fako's capital is Limbé, not Buea — Buea is the
-//     *region's* capital and is also in Fako department, so both are listed).
-//
-// Keys must exactly match REGIONS in constants.ts. First entry in each list
-// is always that region's own capital, so it sorts first in the dropdown.
+// city list data
 export const TOWNS_BY_REGION: Record<string, string[]> = {
   Adamaoua: ['Ngaoundéré', 'Meiganga', 'Tibati', 'Tignère', 'Banyo'],
   Centre: [
@@ -42,14 +21,7 @@ export const TOWNS_BY_REGION: Record<string, string[]> = {
   ],
 };
 
-// Localities (quartiers) are only curated for each region's own capital —
-// the one city per region large enough that "which quartier" is actually
-// useful to know. A curated representative subset (8-20 each), not each
-// city's full official quartier list (Yaoundé alone has ~114), sourced from
-// French Wikipedia's quartier list pages (fr.wikipedia.org/wiki/Quartiers_de_*)
-// where one exists, otherwise cross-referenced across multiple sources. A
-// city with no entry here still gets a working locality field — it just
-// only offers OTHER, since there's no curated list to show.
+// locality list data
 export const LOCALITIES_BY_CITY: Record<string, string[]> = {
   Ngaoundéré: ['Baladji', 'Dang', 'Bamyanga', 'Sabongari', 'Wakwa', 'Béka-Hosséré', 'Madagascar', 'Joli-Soir'],
   Yaoundé: [

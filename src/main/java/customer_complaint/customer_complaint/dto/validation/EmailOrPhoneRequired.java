@@ -8,9 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-// Class-level constraint for RegisterSubscriberRequest: email and phone are
-// each individually optional, but at least one must be supplied. See
-// EmailOrPhoneRequiredValidator.
+// validation constraint
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
 @Constraint(validatedBy = EmailOrPhoneRequiredValidator.class)

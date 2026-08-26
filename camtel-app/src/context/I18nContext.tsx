@@ -5,10 +5,9 @@ export type Language = 'en' | 'fr';
 
 type Dictionary = Record<string, string>;
 
-// Flat key -> { en, fr } translation table. Keys are grouped by area with a
-// dot prefix purely for readability; lookups are a plain string match.
+// translation lookup table
 const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
-  // Brand / common
+  // shared labels
   'brand.name': { en: 'CAMTEL', fr: 'CAMTEL' },
   'common.login': { en: 'Login', fr: 'Connexion' },
   'common.loggingIn': { en: 'Logging in…', fr: 'Connexion…' },
@@ -62,7 +61,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'common.serviceType': { en: 'Service type', fr: 'Type de service' },
   'common.complaintTypeLower': { en: 'Complaint type', fr: 'Type de plainte' },
 
-  // Role select landing page
+  // page section
   'roleSelect.title': { en: 'Welcome to CAMTEL', fr: 'Bienvenue chez CAMTEL' },
   'roleSelect.subtitle': {
     en: 'Tell us who you are so we can take you to the right place.',
@@ -81,14 +80,14 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   },
   'roleSelect.staffCta': { en: 'Continue as staff', fr: 'Continuer en tant que personnel' },
 
-  // Login (subscriber)
+  // login section
   'login.title': { en: 'Subscriber Login', fr: 'Connexion abonné(e)' },
   'login.demoHint': { en: 'Demo: 0600000000 / password', fr: 'Démo : 0600000000 / password' },
   'login.staffLink': { en: 'CAMTEL staff? Go to internal login', fr: 'Personnel CAMTEL ? Accéder à la connexion interne' },
   'login.backToRoleSelect': { en: '← Not you? Choose a different path', fr: '← Ce n’est pas vous ? Choisir un autre accès' },
   'login.verifyEmailLink': { en: 'Have a verification code?', fr: 'Vous avez un code de vérification ?' },
 
-  // Verify email
+  // verify section
   'verify.title': { en: 'Verify your email', fr: 'Vérifiez votre e-mail' },
   'verify.subtitle': {
     en: 'Enter the 6-digit code we emailed you to finish creating your account.',
@@ -102,7 +101,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'verify.resendSuccess': { en: 'A new code has been sent', fr: 'Un nouveau code a été envoyé' },
   'verify.success': { en: 'Email verified — welcome to CAMTEL!', fr: 'E-mail vérifié — bienvenue chez CAMTEL !' },
 
-  // Internal login (staff)
+  // internal login section
   'internal.title': { en: 'CAMTEL Internal Platform', fr: 'Plateforme interne CAMTEL' },
   'internal.subtitle': { en: 'Staff access only', fr: 'Accès réservé au personnel' },
   'internal.demoHint': {
@@ -116,7 +115,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'internal.customerLink': { en: 'Customer? Go to subscriber login', fr: 'Client(e) ? Accéder à la connexion abonné(e)' },
   'internal.backToRoleSelect': { en: '← Not staff? Choose a different path', fr: '← Pas du personnel ? Choisir un autre accès' },
 
-  // Register
+  // register section
   'register.title': { en: 'Create your CAMTEL account', fr: 'Créer votre compte CAMTEL' },
   'register.camtelPhone': { en: 'CAMTEL phone number', fr: 'Numéro de téléphone CAMTEL' },
   'register.camtelAccount': { en: 'CAMTEL account number', fr: 'Numéro de compte CAMTEL' },
@@ -144,7 +143,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'register.contactPhoneOnly': { en: 'Phone only', fr: 'Téléphone uniquement' },
   'register.contactBoth': { en: 'Both email and phone', fr: 'E-mail et téléphone' },
 
-  // Nav / sidebar
+  // nav labels
   'nav.myComplaints': { en: 'My Complaints', fr: 'Mes plaintes' },
   'nav.submitComplaint': { en: 'Submit Complaint', fr: 'Déposer une plainte' },
   'sidebar.dashboard': { en: 'Dashboard', fr: 'Tableau de bord' },
@@ -154,7 +153,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'sidebar.users': { en: 'User Management', fr: 'Gestion des utilisateurs' },
   'sidebar.config': { en: 'Configuration', fr: 'Configuration' },
 
-  // Page titles
+  // title labels
   'page.myComplaints': { en: 'My Complaints', fr: 'Mes plaintes' },
   'page.submitComplaint': { en: 'Submit a Complaint', fr: 'Déposer une plainte' },
   'page.agentComplaints': { en: 'Assigned Complaints', fr: 'Plaintes assignées' },
@@ -165,7 +164,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'page.managerUsers': { en: 'User Management', fr: 'Gestion des utilisateurs' },
   'page.managerConfig': { en: 'System Configuration', fr: 'Configuration du système' },
 
-  // Complaint detail page
+  // detail page section
   'detail.affectedService': { en: 'Affected Service', fr: 'Service concerné' },
   'detail.submissionDate': { en: 'Submission date', fr: 'Date de soumission' },
   'detail.noDescription': { en: 'No description provided', fr: 'Aucune description fournie' },
@@ -191,14 +190,13 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'reports.generatedAt': { en: 'Generated At', fr: 'Généré le' },
   'reports.generatedBy': { en: 'Generated By', fr: 'Généré par' },
 
-  // Complaint status labels — keyed by the backend's ComplaintStatus enum
-  // values exactly (model/enums/ComplaintStatus.java).
+  // status labels
   'status.SUBMITTED': { en: 'Submitted', fr: 'Soumise' },
   'status.ASSIGNED': { en: 'Assigned', fr: 'Assignée' },
   'status.IN_PROGRESS': { en: 'In Progress', fr: 'En cours' },
   'status.RESOLVED': { en: 'Resolved', fr: 'Résolue' },
 
-  // Generic / shared
+  // misc labels
   'common.fillAllFields': { en: 'Please fill in all fields', fr: 'Veuillez remplir tous les champs' },
   'common.somethingWentWrong': { en: 'Something went wrong. Please try again.', fr: 'Une erreur est survenue. Veuillez réessayer.' },
   'common.loading': { en: 'Loading…', fr: 'Chargement…' },
@@ -208,27 +206,21 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'common.apply': { en: 'Apply', fr: 'Appliquer' },
   'common.yes': { en: 'Yes', fr: 'Oui' },
 
-  // Login
-  // Deliberately identical wording to the backend's genuine bad-password
-  // InvalidCredentialsException("Invalid credentials") — a login attempt on
-  // the wrong portal (subscriber creds on staff login, or vice versa) must
-  // read exactly the same as a wrong password. The previous copy ("this
-  // account is not a subscriber account") confirmed to anyone probing a
-  // known email/phone both that the account exists and which portal it
-  // belongs to — a real account-enumeration leak, not just wording.
+  // login section
+  // wording note
   'common.invalidCredentials': { en: 'Invalid credentials', fr: 'Identifiants invalides' },
 
-  // Register
+  // register section
   'register.success': { en: 'Account created — please log in', fr: 'Compte créé — veuillez vous connecter' },
 
-  // Validation
+  // validation labels
   'validation.required': { en: 'Required', fr: 'Requis' },
   'validation.invalidPhone': { en: 'Enter a valid phone number', fr: 'Entrez un numéro de téléphone valide' },
   'validation.invalidEmail': { en: 'Invalid email', fr: 'E-mail invalide' },
   'validation.minPassword': { en: 'Min 6 characters', fr: '6 caractères minimum' },
   'validation.passwordMismatch': { en: 'Passwords do not match', fr: 'Les mots de passe ne correspondent pas' },
 
-  // Submit complaint
+  // submit section
   'submit.success': {
     en: "Complaint submitted successfully. You'll receive a confirmation by email or phone.",
     fr: 'Plainte soumise avec succès. Vous recevrez une confirmation par e-mail ou par téléphone.',
@@ -260,11 +252,11 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'submit.submitting': { en: 'Submitting…', fr: 'Envoi…' },
   'submit.submitComplaint': { en: 'Submit Complaint', fr: 'Déposer une plainte' },
 
-  // My complaints
+  // list section
   'myComplaints.empty': { en: "You haven't submitted any complaints yet.", fr: "Vous n’avez soumis aucune plainte." },
   'myComplaints.viewDetails': { en: 'View Details', fr: 'Voir les détails' },
 
-  // Agent complaints
+  // agent section
   'agent.claimSuccess': { en: 'Complaint claimed', fr: 'Plainte prise en charge' },
   'agent.resolutionNoteRequired': { en: 'Resolution note is required when resolving', fr: 'Une note de résolution est requise' },
   'agent.claimByTicket': { en: 'Claim a complaint by ticket number', fr: 'Prendre en charge une plainte par numéro de ticket' },
@@ -275,7 +267,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'agent.resolutionNote': { en: 'Resolution note', fr: 'Note de résolution' },
   'agent.saveUpdate': { en: 'Save Update', fr: 'Enregistrer' },
 
-  // Manager dashboard
+  // dashboard section
   'dashboard.recurringPrefix': { en: 'Recurring pattern detected:', fr: 'Motif récurrent détecté :' },
   'dashboard.complaintsIn': { en: 'complaints in the', fr: 'plaintes sur la' },
   'dashboard.totalComplaints': { en: 'Total complaints', fr: 'Total des plaintes' },
@@ -303,7 +295,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'dashboard.ofLabel': { en: 'of', fr: 'sur' },
   'dashboard.view': { en: 'View', fr: 'Voir' },
 
-  // Heatmap
+  // map section
   'heatmap.empty': { en: 'No data for the selected period', fr: 'Aucune donnée pour la période sélectionnée' },
   'heatmap.complaints': { en: 'complaints', fr: 'plaintes' },
   'heatmap.byCity': { en: 'By city', fr: 'Par ville' },
@@ -314,7 +306,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
     fr: 'Carte du Cameroun colorée selon le nombre de plaintes par région',
   },
 
-  // KPIs
+  // stats section
   'kpis.groupByPrefix': { en: 'Group by:', fr: 'Grouper par :' },
   'kpis.group': { en: 'Group', fr: 'Groupe' },
   'kpis.total': { en: 'Total', fr: 'Total' },
@@ -325,7 +317,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'kpis.volume': { en: 'Volume', fr: 'Volume' },
   'kpis.timeWindow': { en: 'Time Window', fr: 'Fenêtre temporelle' },
 
-  // Reports
+  // reports section
   'reports.pickDates': { en: 'Please select a start and end date.', fr: 'Veuillez sélectionner une date de début et de fin.' },
   'reports.generated': { en: 'Report generation started', fr: 'Génération du rapport démarrée' },
   'reports.weekly': { en: 'Weekly', fr: 'Hebdomadaire' },
@@ -333,7 +325,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'reports.noneYet': { en: 'No reports generated in this session yet', fr: 'Aucun rapport généré dans cette session' },
   'reports.downloadPdf': { en: 'Download PDF', fr: 'Télécharger le PDF' },
 
-  // Users
+  // users section
   'users.created': { en: 'User created successfully', fr: 'Utilisateur créé avec succès' },
   'users.updated': { en: 'User updated successfully', fr: 'Utilisateur mis à jour' },
   'users.deactivated': { en: 'User deactivated', fr: 'Utilisateur désactivé' },
@@ -376,7 +368,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'users.importStatusFailed': { en: 'Failed', fr: 'Échoué' },
   'users.importDone': { en: 'Import finished', fr: 'Importation terminée' },
 
-  // Config / categories
+  // config section
   'config.categoryAdded': { en: 'Category added', fr: 'Catégorie ajoutée' },
   'config.categoryUpdated': { en: 'Category updated', fr: 'Catégorie mise à jour' },
   'config.categoryDeleted': { en: 'Category deleted', fr: 'Catégorie supprimée' },
@@ -389,7 +381,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
     fr: 'Supprimer cette catégorie ? Les plaintes qui y sont liées ne seront pas affectées.',
   },
 
-  // PWA install / update
+  // pwa labels
   'pwa.offlineReady': { en: 'CAMTEL is ready to work offline', fr: 'CAMTEL est prêt à fonctionner hors ligne' },
   'pwa.updateAvailable': { en: 'A new version is available', fr: 'Une nouvelle version est disponible' },
   'pwa.reload': { en: 'Reload', fr: 'Recharger' },
@@ -406,7 +398,7 @@ const TRANSLATIONS: Record<string, { en: string; fr: string }> = {
   'pwa.install': { en: 'Install', fr: 'Installer' },
   'pwa.installCta': { en: 'Install app', fr: 'Installer l’appli' },
 
-  // In-app notifications
+  // notification labels
   'notif.bellLabel': { en: 'Notifications', fr: 'Notifications' },
   'notif.title': { en: 'Notifications', fr: 'Notifications' },
   'notif.markAllRead': { en: 'Mark all read', fr: 'Tout marquer comme lu' },

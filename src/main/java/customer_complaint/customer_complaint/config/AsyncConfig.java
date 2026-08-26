@@ -7,10 +7,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.concurrent.Executor;
 
-// Backs every @Async method in the app (currently just EmailServiceImpl) —
-// a small dedicated pool so a slow SMTP server can't exhaust request
-// threads, and registration/login/complaint-status calls don't wait on the
-// mail send to complete before returning.
+// async pool setup
 @Configuration
 @EnableAsync
 public class AsyncConfig {

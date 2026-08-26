@@ -19,7 +19,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // without this, every @PreAuthorize in the controllers is silently ignored
+@EnableMethodSecurity // enable check
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -74,11 +74,7 @@ public class SecurityConfig {
             throws Exception {
 
         http
-                .cors(cors -> {}) // delegate to the CorsConfig WebMvcConfigurer bean;
-                // without this, Spring Security applies its
-                // authorization rules to OPTIONS preflight
-                // requests too, rejecting them before any
-                // CORS headers are attached
+                .cors(cors -> {}) // set config
                 .csrf(csrf -> csrf.disable())
 
                 .sessionManagement(session ->
@@ -94,12 +90,7 @@ public class SecurityConfig {
                                 "/actuator/health"
                         ).permitAll()
 
-                        // FIX: ComplaintController.track() was written with no @PreAuthorize,
-                        // clearly meant to let a customer check a ticket's status without being
-                        // logged in. But method-level @PreAuthorize only ever *restricts* access -
-                        // it never overrides the URL-level rule below. Since this path wasn't in
-                        // the permitAll list, .anyRequest().authenticated() silently required a
-                        // valid Bearer token here too. This makes it genuinely public.
+                        // check path
                         .requestMatchers(HttpMethod.GET, "/api/complaints/track/**")
                         .permitAll()
 

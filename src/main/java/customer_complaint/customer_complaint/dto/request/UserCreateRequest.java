@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for manager creating agents/managers
+// request payload
 @Getter
 @Setter
 public class UserCreateRequest {
@@ -26,10 +26,10 @@ public class UserCreateRequest {
     @NotBlank
     private String role;
 
-    // Agent-specific
+    // role-specific field
     private String assignedRegion;
     private String assignedService;
 
-    // Manager-specific
+    // role-specific field
     private String department;
 }

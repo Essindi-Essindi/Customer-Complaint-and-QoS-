@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.model.enums;
 
-// complaint lifecycle stages
+// enum values
 public enum ComplaintStatus {
     SUBMITTED,
     ASSIGNED,

@@ -22,9 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-// backs the "Dashboard Overview" table: every complaint in the system,
-// filterable and paginated. Path is under /api/manager/** which
-// SecurityConfig already restricts to hasRole('MANAGER').
+// endpoint setup
 @RestController
 @RequestMapping("/api/manager/complaints")
 @RequiredArgsConstructor
@@ -51,17 +49,14 @@ public class ManagerComplaintController {
                 complaintService.listForManager(type, serviceType, region, status, start, end, pageable));
     }
 
-    // POST /api/manager/complaints/{id}/assign
-    // Manager assigns (or re-assigns) an agent to a complaint.
+    // handle request
     @PostMapping("/{complaintId}/assign")
     public ResponseEntity<ComplaintResponse> assign(@PathVariable Long complaintId,
                                                     @Valid @RequestBody AssignAgentRequest request) {
         return ResponseEntity.ok(complaintService.assignAgent(complaintId, request.getAgentId()));
     }
 
-    // GET /api/manager/complaints/agents-by-service?service=MOBILE
-    // Returns all active agents for the given service, with their current load count.
-    // Used to populate the assignment dropdown in the manager's complaint detail modal.
+    // build response
     @GetMapping("/agents-by-service")
     public ResponseEntity<List<AgentWithLoadResponse>> agentsByService(@RequestParam String service) {
         List<Agent> agents = userRepository.findActiveAgentsByService(service);

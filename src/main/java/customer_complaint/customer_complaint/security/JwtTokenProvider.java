@@ -22,9 +22,7 @@ public class JwtTokenProvider {
         return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
-    // Subject is the user's numeric id, not their email — a subscriber can
-    // now register with a phone number and no email at all, so email is no
-    // longer guaranteed to exist as a stable identifier. The id always does.
+    // build token
     public String generateToken(String subjectUserId, String role) {
 
         Date now = new Date();

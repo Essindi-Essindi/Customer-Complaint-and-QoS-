@@ -24,12 +24,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-// groups complaints for dashboard views
+// handle service logic
 @Service
 @RequiredArgsConstructor
 public class AnalyticsServiceImpl implements AnalyticsService {
 
-    // Recurring pattern threshold: same type + region within this window
+    // config value
     private static final int RECURRING_THRESHOLD = 5;
     private static final int RECURRING_WINDOW_DAYS = 7;
 
@@ -40,12 +40,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
             String serviceType, LocalDate start, LocalDate end, String sortBy, Pageable pageable) {
         List<Complaint> complaints = findInRange(serviceType, start, end);
 
-        // Grouped in memory (not a DB-level Page query) since the source is
-        // already a grouped/sorted aggregate rather than raw rows — the
-        // dataset here is bounded by distinct (region, city) combinations
-        // (a few hundred at most), so this is cheap. PageImpl still gives
-        // the frontend real page/total metadata to build pagination
-        // controls off, same shape as SpringPage<T> everywhere else in the app.
+        // process data
         List<HeatMapResponse> all = complaints.stream()
                 .filter(c -> c.getRegion() != null)
                 .collect(Collectors.groupingBy(c -> c.getRegion() + "|" + c.getCity(), Collectors.counting()))
@@ -62,11 +57,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
         return new PageImpl<>(all.subList(from, to), pageable, all.size());
     }
 
-    // "region" / "city" sort alphabetically (region ties broken by city, and
-    // vice versa, so the order is still fully deterministic either way);
-    // anything else (including null/blank, the default) sorts by complaint
-    // count descending — the original behavior, unchanged for callers that
-    // don't ask for a specific sort.
+    // helper logic
     private Comparator<HeatMapResponse> heatMapComparator(String sortBy) {
         return switch (sortBy == null ? "" : sortBy) {
             case "region" -> Comparator.comparing(HeatMapResponse::getRegion)
@@ -90,13 +81,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .toList();
     }
 
-    // FIX: serviceType used to be accepted as a parameter and silently
-    // never applied to the query — findByCreatedAtBetween ignores it
-    // entirely, so picking MOBILE/ADSL/FTTH in the heatmap filter had zero
-    // effect on either the map or the table; only the date range actually
-    // filtered anything. Both getHeatMap and getRegionTotals now route
-    // through this shared helper so the fix (and any future one) can't
-    // drift between the two.
+    // helper logic
     private List<Complaint> findInRange(String serviceType, LocalDate start, LocalDate end) {
         LocalDateTime startDt = start.atStartOfDay();
         LocalDateTime endDt = end.plusDays(1).atStartOfDay();
@@ -148,11 +133,7 @@ public class AnalyticsServiceImpl implements AnalyticsService {
                 .toList();
     }
 
-    // Resolution time: (updatedAt - createdAt) in hours for every RESOLVED
-    // complaint in the group, averaged. Fully automatic — updatedAt is
-    // whatever timestamp ComplaintServiceImpl.updateStatus() last wrote,
-    // not a manually-entered figure. Nothing here asks anyone to type a
-    // duration.
+    // helper logic
     private KpiResponse toKpi(String label, List<Complaint> complaints) {
         long resolved = complaints.stream().filter(c -> c.getStatus() == ComplaintStatus.RESOLVED).count();
 

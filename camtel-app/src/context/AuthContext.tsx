@@ -3,14 +3,14 @@ import type { ReactNode } from 'react';
 import type { Role } from '../lib/constants';
 import type { AuthResponse } from '../lib/api';
 
-// Mirrors dto/response/AuthResponse.java exactly.
-// department: for agents = assignedService (MOBILE/ADSL/FTTH), for managers = department name.
+// data shape notes
+// field mapping info
 interface AuthState {
   token: string | null;
   role: Role | null;
   userId: number | null;
   name: string | null;
-  department: string | null; // agent's service or manager's department
+  department: string | null; // extra field info
 }
 
 interface AuthContextType extends AuthState {

@@ -12,14 +12,7 @@ import type { Role } from '../lib/constants';
 import { REGIONS, SERVICE_TYPES, SERVICE_TYPE_LABELS, type ServiceTypeValue } from '../lib/constants';
 import { useI18n } from '../context/I18nContext';
 
-// POST /api/manager/users (UserCreateRequest) only supports role AGENT or
-// MANAGER — UserManagementServiceImpl.createUser throws for anything else,
-// because subscribers can only be created through the public
-// /api/auth/register flow. PUT /api/manager/users/{id} (UserUpdateRequest)
-// never accepts email, password, or role — only name, phone, active, and
-// the role-specific fields (assignedRegion/assignedService for an agent,
-// department for a manager). There's also no createdAt on UserResponse, so
-// that column is gone too.
+// form type definitions
 type CreateForm = {
   name: string;
   email: string;
@@ -56,8 +49,7 @@ const PAGE_SIZE = 20;
 export default function ManagerUsers() {
   const { t, lang } = useI18n();
   const [users, setUsers] = useState<UserResponse[]>([]);
-  // Defaults to AGENT since that's who a manager is managing day to day;
-  // "All Roles" is still one select away.
+  // default filter value
   const [roleFilter, setRoleFilter] = useState<Role | ''>('AGENT');
   const [page, setPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -109,7 +101,7 @@ export default function ManagerUsers() {
 
   const handleRoleFilterChange = (value: Role | '') => {
     setRoleFilter(value);
-    setPage(0); // a new filter invalidates whatever page we were on
+    setPage(0); // reset page
   };
 
   const openImport = () => {

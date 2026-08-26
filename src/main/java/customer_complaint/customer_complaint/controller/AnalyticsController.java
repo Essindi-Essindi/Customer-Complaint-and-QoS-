@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.time.LocalDate;
 import java.util.List;
 
-// manager dashboard analytics endpoints
+// endpoint setup
 @RestController
 @RequestMapping("/api/analytics")
 @RequiredArgsConstructor
@@ -26,9 +26,7 @@ public class AnalyticsController {
 
     private final AnalyticsService analyticsService;
 
-    // Paginated region+city breakdown — the heatmap page's "by city" table.
-    // sortBy: "region", "city", or omitted/anything else for complaintCount
-    // descending (the default).
+    // build response
     @GetMapping("/heatmap")
     public ResponseEntity<Page<HeatMapResponse>> heatMap(
             @RequestParam(required = false) String serviceType,
@@ -41,9 +39,7 @@ public class AnalyticsController {
         return ResponseEntity.ok(analyticsService.getHeatMap(serviceType, start, end, sortBy, pageable));
     }
 
-    // Every region's total, unpaginated — the heatmap page's map shading,
-    // which needs the true total regardless of which page of the city
-    // table above is currently showing.
+    // return totals
     @GetMapping("/heatmap/regions")
     public ResponseEntity<List<RegionTotalResponse>> regionTotals(
             @RequestParam(required = false) String serviceType,
