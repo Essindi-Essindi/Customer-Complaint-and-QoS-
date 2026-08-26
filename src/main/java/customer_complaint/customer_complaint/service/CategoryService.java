@@ -4,7 +4,7 @@ import customer_complaint.customer_complaint.model.Category;
 
 import java.util.List;
 
-// category crud
+// category service
 public interface CategoryService {
 
     Category create(String name, String description);

@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// how and when a complaint was closed out
+// entity class
 @Entity
 @Table(name = "resolutions")
 @Getter

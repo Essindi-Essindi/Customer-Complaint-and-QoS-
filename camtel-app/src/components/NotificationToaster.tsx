@@ -1,10 +1,7 @@
 import { useNotifications } from '../context/NotificationContext';
 import { Toast } from './Toast';
 
-// Stacks a Toast popup per newly-arrived notification, regardless of which
-// page the user is currently on — mounted once at the app root inside
-// AuthProvider/NotificationProvider. Stays empty (renders nothing) until an
-// event actually concerns the logged-in subscriber/agent/manager.
+// render toast stack
 export function NotificationToaster() {
   const { popups, dismissPopup } = useNotifications();
 

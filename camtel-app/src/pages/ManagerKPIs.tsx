@@ -6,12 +6,7 @@ import type { KpiResponse, RecurringPatternResponse } from '../lib/api';
 import { KPI_GROUP_OPTIONS, type KpiGroupBy } from '../lib/constants';
 import { useI18n } from '../context/I18nContext';
 
-// GET /api/analytics/kpis only supports groupBy in {type, region, team}
-// (AnalyticsServiceImpl.getKpis switches on those, anything else falls back
-// to "type"). There's no per-agent, per-service-line, per-status, or
-// time-series grouping on the backend, so the old fake bar/pie/line charts
-// are gone in favour of the real grouped table plus the real recurring
-// patterns endpoint.
+// page component
 export default function ManagerKPIs() {
   const { t } = useI18n();
   const [groupBy, setGroupBy] = useState<KpiGroupBy>('type');

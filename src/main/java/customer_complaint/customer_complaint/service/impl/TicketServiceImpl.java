@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
-// builds ticket numbers like TKT-YYYYMMDD-XXXX
+// ticket service impl
 @Service
 @RequiredArgsConstructor
 public class TicketServiceImpl implements TicketService {

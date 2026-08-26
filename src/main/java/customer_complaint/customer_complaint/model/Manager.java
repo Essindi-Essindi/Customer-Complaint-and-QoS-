@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// staff with dashboard and admin access
+// entity class
 @Entity
 @DiscriminatorValue("MANAGER")
 @Getter

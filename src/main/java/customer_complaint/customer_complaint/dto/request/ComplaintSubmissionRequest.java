@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for submitting a complaint
+// request payload
 @Getter
 @Setter
 public class ComplaintSubmissionRequest {
@@ -24,8 +24,7 @@ public class ComplaintSubmissionRequest {
     @NotBlank
     private String city;
 
-    // Optional — not every city has a curated locality list, and "Other" is
-    // always a valid choice even when it does.
+    // optional field
     private String locality;
 
     private String description;

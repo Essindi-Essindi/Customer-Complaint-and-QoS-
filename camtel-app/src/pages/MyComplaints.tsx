@@ -8,10 +8,7 @@ import type { ComplaintListItemResponse } from '../lib/api';
 import { useI18n } from '../context/I18nContext';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
 
-// GET /api/complaints/mine returns ComplaintListItemResponse rows: id,
-// ticketNumber, type, status, region, createdAt. There's no service/city/
-// subscriber info on this list endpoint, so the table only shows what's
-// actually there.
+// page component
 export default function MyComplaints() {
   const { t } = useI18n();
   const [complaints, setComplaints] = useState<ComplaintListItemResponse[]>([]);
@@ -37,9 +34,7 @@ export default function MyComplaints() {
     };
   }, [t]);
 
-  // Auto-refresh: an agent/manager can move a status forward at any time —
-  // re-fetch quietly every 5s so the list stays current without a manual
-  // reload. Skips the loading spinner on these background ticks.
+  // auto refresh list
   useAutoRefresh(() => {
     complaintsApi.listMine().then(setComplaints).catch(() => {});
   });

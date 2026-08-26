@@ -13,13 +13,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-// Sends every subscriber-facing email in the app: registration verification
-// codes, the welcome email once verified, and complaint status updates.
-// Every method is @Async and swallows its own exceptions (logging instead)
-// so a slow/unreachable SMTP server can never turn a 200-worthy business
-// operation (register, submit a complaint, change its status) into a 500 -
-// the same "best-effort side channel" principle NotificationServiceImpl
-// already applies to SMS.
+// email service impl
 @Service
 @RequiredArgsConstructor
 public class EmailServiceImpl implements EmailService {
@@ -91,8 +85,7 @@ public class EmailServiceImpl implements EmailService {
                 statusFr = "a été résolue";
             }
             default -> {
-                // IN_PROGRESS (and anything else) intentionally sends no
-                // email — only SUBMITTED / ASSIGNED / RESOLVED were asked for.
+                // handle error
                 return;
             }
         }

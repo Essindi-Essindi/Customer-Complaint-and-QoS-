@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for re-sending a verification code (e.g. the first one expired)
+// request payload
 @Getter
 @Setter
 public class ResendVerificationRequest {

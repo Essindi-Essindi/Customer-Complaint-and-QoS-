@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
 
-// turns exceptions into consistent error responses
+// handle exception
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
@@ -69,11 +69,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleValidation(MethodArgumentNotValidException ex) {
-        // getFieldErrors() alone misses class-level constraints (e.g.
-        // @EmailOrPhoneRequired on RegisterSubscriberRequest) — those land in
-        // getAllErrors() as plain ObjectErrors with no field to report, so
-        // they need their own branch here or their message silently
-        // disappears behind the generic "Validation failed" fallback.
+        // build error message
         String message = ex.getBindingResult().getAllErrors().stream()
                 .map(e -> e instanceof FieldError fe ? fe.getField() + ": " + fe.getDefaultMessage() : e.getDefaultMessage())
                 .collect(Collectors.joining(", "));
@@ -109,10 +105,7 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, ex.getMessage());
     }
 
-    // FIX: this used to swallow every unhandled exception with zero logging - "Something went
-    // wrong" was the ONLY thing that ever reached the console, making any real 500 impossible to
-    // diagnose from the server side. Now the full stack trace goes to the logs; the client still
-    // only ever sees the generic message (no internals leaked in the response body).
+    // handle generic case
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleGeneric(Exception ex) {
         log.error("Unhandled exception", ex);

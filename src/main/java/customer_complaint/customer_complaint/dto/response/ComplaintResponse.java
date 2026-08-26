@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// full complaint detail returned to client
+// complaint detail data
 @Getter
 @Setter
 @AllArgsConstructor

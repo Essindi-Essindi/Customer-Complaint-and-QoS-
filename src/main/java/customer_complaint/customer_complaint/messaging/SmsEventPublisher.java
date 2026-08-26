@@ -4,7 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.stereotype.Component;
 
-// pushes an sms task onto the queue
+// publish event
 @Component
 @RequiredArgsConstructor
 public class SmsEventPublisher {

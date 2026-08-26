@@ -8,7 +8,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// sms notification tied to a complaint
+// entity class
 @Entity
 @Table(name = "notifications")
 @Getter

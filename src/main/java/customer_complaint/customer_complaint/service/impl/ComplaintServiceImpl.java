@@ -36,7 +36,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// idempotency check, save, queue sms
+// complaint service impl
 @Service
 @RequiredArgsConstructor
 public class ComplaintServiceImpl implements ComplaintService {
@@ -198,9 +198,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         complaint.setUpdatedAt(LocalDateTime.now());
         complaintRepository.save(complaint);
 
-        // FIX: claiming a complaint moves it to ASSIGNED but never told the
-        // subscriber - no SMS, no email, nothing. Both notification channels
-        // only ever fired from submit() and updateStatus().
+        // send notification
         notificationService.notifyStatusChanged(complaint);
 
         appNotificationService.notifyUser(complaint.getSubscriber(), complaint, "STATUS_CHANGED",
@@ -220,15 +218,14 @@ public class ComplaintServiceImpl implements ComplaintService {
                 .orElseThrow(() -> new ResourceNotFoundException("Agent not found"));
 
         complaint.setAgent(agent);
-        // Only move to ASSIGNED when the complaint hasn't progressed further
+        // check status
         if (complaint.getStatus() == ComplaintStatus.SUBMITTED) {
             complaint.setStatus(ComplaintStatus.ASSIGNED);
         }
         complaint.setUpdatedAt(LocalDateTime.now());
         complaintRepository.save(complaint);
 
-        // Same fix as claim() above — a manager assigning an agent is the
-        // other path that can produce ASSIGNED without ever notifying.
+        // send notification
         notificationService.notifyStatusChanged(complaint);
 
         appNotificationService.notifyUser(agent, complaint, "COMPLAINT_ASSIGNED",
@@ -266,13 +263,7 @@ public class ComplaintServiceImpl implements ComplaintService {
         }
     }
 
-    // Keeps region/city/locality homogeneous in the database — all three are
-    // free-text columns, but every value that actually reaches the DB must
-    // come from CameroonLocations' closed lists (the same lists the
-    // frontend's region -> city -> locality cascading dropdown is built
-    // from, with CameroonLocations.OTHER as the shared "not in the list"
-    // escape hatch), or the heatmap's per-region grouping would silently
-    // fragment on spelling variants.
+    // helper method
     private void validateLocation(String region, String city, String locality) {
         if (!CameroonLocations.isValidRegion(region)) {
             throw new IllegalArgumentException(
@@ -283,8 +274,7 @@ public class ComplaintServiceImpl implements ComplaintService {
                     "Invalid city '" + city + "' for region '" + region + "'. Valid values: "
                             + CameroonLocations.townsByRegion().get(region) + " or '" + CameroonLocations.OTHER + "'");
         }
-        // A city of OTHER has no locality list to validate against — the
-        // subscriber is expected to have described both in free text instead.
+        // check status
         if (!CameroonLocations.OTHER.equals(city) && !CameroonLocations.isValidLocalityForCity(city, locality)) {
             throw new IllegalArgumentException(
                     "Invalid locality '" + locality + "' for city '" + city + "'. Valid values: "

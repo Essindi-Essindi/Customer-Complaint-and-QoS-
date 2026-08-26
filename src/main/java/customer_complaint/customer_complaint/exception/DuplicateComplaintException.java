@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.exception;
 
-// thrown when idempotency key already exists
+// custom exception
 public class DuplicateComplaintException extends RuntimeException {
 
     public DuplicateComplaintException(String message) {

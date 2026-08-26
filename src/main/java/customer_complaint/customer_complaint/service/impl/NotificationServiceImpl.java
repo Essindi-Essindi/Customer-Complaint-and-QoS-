@@ -13,9 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
-// builds the sms text and queues it; also fans out the email side of a
-// status change (EmailService itself decides which statuses actually
-// warrant an email — SUBMITTED / ASSIGNED / RESOLVED, not every status)
+// notification service impl
 @Service
 @RequiredArgsConstructor
 public class NotificationServiceImpl implements NotificationService {
@@ -49,9 +47,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setMessage(message);
         notification.setType("SMS");
 
-        // A subscriber can now register with email only and no phone at
-        // all, so there may be nowhere to SMS. Record why rather than
-        // queuing a doomed send to a null recipient.
+        // check status
         if (phone == null || phone.isBlank()) {
             notification.setStatus(NotificationStatus.FAILED);
             notificationRepository.save(notification);
@@ -63,12 +59,7 @@ public class NotificationServiceImpl implements NotificationService {
         notification.setStatus(NotificationStatus.QUEUED);
         notificationRepository.save(notification);
 
-        // FIX: rabbitTemplate.convertAndSend() used to be called directly here, uncaught. If the
-        // broker is unreachable, this throws *after* the real business write above already
-        // committed - the complaint status change genuinely succeeded, but the client still got a
-        // 500 because a best-effort side-channel (queueing an SMS) blew up. We now log it and mark
-        // the notification FAILED instead of propagating the exception - the caller still returns
-        // 200 with the real result.
+        // handle error
         try {
             smsEventPublisher.publish(new SmsMessageEvent(notification.getId(), phone, message));
         } catch (Exception ex) {

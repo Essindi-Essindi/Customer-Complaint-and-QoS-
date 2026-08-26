@@ -9,12 +9,7 @@ import { PasswordInput } from '../components/PasswordInput';
 import { ChevronLeftIcon } from '../components/icons';
 import camtelLogo from '../assets/camtel-logo.png';
 
-// Same /api/auth/login endpoint as the subscriber login — the backend
-// doesn't distinguish staff vs subscriber logins, it just returns whichever
-// role the account has. We reject subscriber accounts here client-side so
-// staff land on the right area. Staff accounts always have an email (see
-// UserCreateRequest), so this form keeps the plain email field even though
-// the wire field is the generic `identifier`.
+// page component
 export default function InternalLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -34,9 +29,7 @@ export default function InternalLogin() {
     setLoading(true);
     try {
       const data = await authApi.login({ identifier: email.trim(), password });
-      // Same reasoning as Login.tsx's mirror-image check: generic wording
-      // only, so this can't be used to probe whether an identifier belongs
-      // to a subscriber account.
+      // wording note
       if (data.role === 'SUBSCRIBER') {
         setError(t('common.invalidCredentials'));
         return;

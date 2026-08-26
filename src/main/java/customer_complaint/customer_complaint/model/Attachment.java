@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// file attached to a complaint
+// entity class
 @Entity
 @Table(name = "attachments")
 @Getter

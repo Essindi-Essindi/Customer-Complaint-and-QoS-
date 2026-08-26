@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-// consumes sms tasks and calls the gateway
+// handle event
 @Component
 @RequiredArgsConstructor
 public class SmsEventListener {

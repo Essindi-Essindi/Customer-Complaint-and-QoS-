@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.model.enums;
 
-// the three account types in the system
+// enum values
 public enum UserRole {
     SUBSCRIBER,
     AGENT,

@@ -7,12 +7,7 @@ import { Toast } from './Toast';
 
 interface VerifyEmailFormProps {
   initialEmail: string;
-  // Called with the real AuthResponse once the code checks out — the caller
-  // decides what happens next (log in + redirect, close a modal, etc.), this
-  // component only owns the email/code form itself. Shared between the
-  // standalone /verify-email page and the modal Register pops open right
-  // after an email registration, so that flow doesn't need a page navigation
-  // to show up.
+  // handle verified callback
   onVerified: (res: AuthResponse) => void;
 }
 

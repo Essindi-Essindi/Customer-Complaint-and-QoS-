@@ -10,14 +10,13 @@ import org.springframework.data.repository.query.Param;
 import java.time.LocalDateTime;
 import java.util.List;
 
-// in-app notification lookups — polled by the frontend, so recipient +
-// createdAt are the two shapes that matter.
+// notification lookups
 public interface AppNotificationRepository extends JpaRepository<AppNotification, Long> {
 
-    // Initial page load / no cursor yet: most recent N for this user.
+    // initial page load
     List<AppNotification> findByRecipientIdOrderByCreatedAtDesc(Long recipientId, Pageable pageable);
 
-    // Polling: only what's new since the last-seen timestamp the frontend is holding.
+    // poll for updates
     List<AppNotification> findByRecipientIdAndCreatedAtAfterOrderByCreatedAtDesc(Long recipientId, LocalDateTime after);
 
     long countByRecipientIdAndReadFalse(Long recipientId);

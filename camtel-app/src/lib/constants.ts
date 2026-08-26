@@ -1,14 +1,9 @@
-// Values here are kept in lockstep with the backend enums in
-// customer_complaint.customer_complaint.model.enums.*
-// Do not add options the backend doesn't accept, and don't rename the
-// underlying values — only the display labels are free to change.
+// enum values note
 
-// model/enums/UserRole.java
+// type def
 export type Role = 'SUBSCRIBER' | 'AGENT' | 'MANAGER';
 
-// Where each role lands once authenticated — the "home" route GuestRoute
-// sends an already-logged-in user to if they land back on a login/register
-// page (browser back button, typing the URL, a stale bookmark, ...).
+// route lookup
 export function dashboardPathForRole(role: Role): string {
   switch (role) {
     case 'AGENT':
@@ -21,7 +16,7 @@ export function dashboardPathForRole(role: Role): string {
   }
 }
 
-// model/enums/ComplaintStatus.java
+// type def
 export type ComplaintStatusValue = 'SUBMITTED' | 'ASSIGNED' | 'IN_PROGRESS' | 'RESOLVED';
 
 export const COMPLAINT_STATUSES: ComplaintStatusValue[] = [
@@ -45,8 +40,7 @@ export const STATUS_COLORS: Record<ComplaintStatusValue, string> = {
   RESOLVED: '#16a34a',
 };
 
-// model/enums/ServiceType.java — ComplaintServiceImpl.parseServiceType() rejects
-// anything that isn't exactly one of these (case-insensitive).
+// type def note
 export type ServiceTypeValue = 'MOBILE' | 'ADSL' | 'FTTH';
 
 export const SERVICE_TYPES: ServiceTypeValue[] = ['MOBILE', 'ADSL', 'FTTH'];
@@ -57,15 +51,12 @@ export const SERVICE_TYPE_LABELS: Record<ServiceTypeValue, { en: string; fr: str
   FTTH: { en: 'FTTH Fibre', fr: 'FTTH Fibre' },
 };
 
-// model/enums/ReportType.java
+// type def
 export type ReportTypeValue = 'WEEKLY' | 'MONTHLY';
 
 export const REPORT_TYPES: ReportTypeValue[] = ['WEEKLY', 'MONTHLY'];
 
-// Complaint "type" is a free-text field on the backend (Complaint.type is a
-// plain String, ComplaintSubmissionRequest.type just needs @NotBlank) so any
-// string is technically valid. We still offer a curated select for a
-// consistent experience; the values sent are exactly the option text.
+// option list data
 export const COMPLAINT_TYPES = [
   'Slow Internet',
   'Call Drop',
@@ -74,8 +65,7 @@ export const COMPLAINT_TYPES = [
   'Service Outage',
 ] as const;
 
-// Region is also a free-text field (Complaint.region is a String), but a
-// closed list keeps data consistent for analytics grouping.
+// option list data
 export const REGIONS = [
   'Adamaoua',
   'Centre',
@@ -89,9 +79,7 @@ export const REGIONS = [
   'West',
 ] as const;
 
-// AnalyticsController /api/analytics/kpis only supports these three groupings
-// (AnalyticsServiceImpl.getKpis switches on "region" / "team", anything else
-// falls back to "type").
+// grouping type note
 export type KpiGroupBy = 'type' | 'region' | 'team';
 
 export const KPI_GROUP_OPTIONS: { value: KpiGroupBy; en: string; fr: string }[] = [

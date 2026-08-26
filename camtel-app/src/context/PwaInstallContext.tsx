@@ -1,18 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 
-// Chrome/Edge/Android fire this instead of letting the browser show its own
-// install UI, so we can capture it, show our own prompt, and replay it
-// later (from the persistent button) instead of only on first load.
-// Not in the DOM lib yet, so it's typed by hand here.
+// custom event type
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
 }
 
-// sessionStorage, not localStorage — dismissing means "not this session",
-// not "never again". The persistent PwaInstallButton is always there
-// regardless for whenever the user does want to install.
+// storage key setup
 const DISMISS_KEY = 'camtel_pwa_install_dismissed';
 
 function isStandalone() {
@@ -25,18 +20,15 @@ function isIosDevice() {
 }
 
 interface PwaInstallContextType {
-  // True once Chrome/Edge/Android has signaled an install prompt is ready.
+  // flag state
   canInstall: boolean;
-  // iOS Safari never fires beforeinstallprompt — there's no programmatic
-  // install, only manual "Share -> Add to Home Screen", so this drives a
-  // fallback instructions view instead of a real prompt button.
+  // flag state
   isIos: boolean;
   isInstalled: boolean;
   promptOpen: boolean;
   openPrompt: () => void;
   closePrompt: () => void;
-  // Resolves 'unavailable' if there's no captured browser prompt to replay
-  // (e.g. called on iOS, or after the one-shot native event was consumed).
+  // return type note
   promptInstall: () => Promise<'accepted' | 'dismissed' | 'unavailable'>;
 }
 
@@ -67,10 +59,7 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Auto-open once per session, shortly after the page becomes installable
-  // (or immediately on iOS, which has no "becomes installable" signal).
-  // Only the automatic trigger respects the dismissal flag — the persistent
-  // PwaInstallButton bypasses it and always opens on click.
+  // auto open logic
   useEffect(() => {
     if (isInstalled || (!canInstall && !isIos)) return;
     if (sessionStorage.getItem(DISMISS_KEY)) return;
@@ -89,8 +78,7 @@ export function PwaInstallProvider({ children }: { children: ReactNode }) {
     if (!deferredEvent) return 'unavailable' as const;
     await deferredEvent.prompt();
     const choice = await deferredEvent.userChoice;
-    // The captured event is single-use regardless of outcome — Chrome
-    // won't replay it, a fresh beforeinstallprompt has to fire again.
+    // reset state
     setDeferredEvent(null);
     return choice.outcome;
   }, [deferredEvent]);

@@ -7,9 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 
-// dynamic, optional filters backing GET /api/manager/complaints. Every method
-// returns null when the filter value is absent so Specification.where(...)
-// simply skips that predicate (JPA composes null specs as "always true").
+// optional filter builders
 public final class ComplaintSpecifications {
 
     private ComplaintSpecifications() {

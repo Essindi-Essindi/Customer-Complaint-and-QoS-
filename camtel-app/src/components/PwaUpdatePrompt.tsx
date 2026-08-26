@@ -2,11 +2,7 @@ import { useRegisterSW } from 'virtual:pwa-register/react';
 import { useI18n } from '../context/I18nContext';
 import { Toast } from './Toast';
 
-// Owns the service worker's lifecycle for the whole app: registers it,
-// surfaces a one-time "ready to work offline" toast, and — since an
-// installed PWA has no browser reload button reminding the user a new
-// version shipped — a persistent banner with an explicit Reload action
-// whenever autoUpdate has a new build waiting to activate.
+// manage service worker updates
 export function PwaUpdatePrompt() {
   const { t } = useI18n();
   const {
@@ -16,13 +12,7 @@ export function PwaUpdatePrompt() {
   } = useRegisterSW({
     onRegisteredSW(_url, registration) {
       if (!registration) return;
-      // The browser only checks the SW script for a new version on
-      // registration by default. An installed PWA is often left open (or
-      // just backgrounded, not closed) for days, so that one check alone
-      // means this banner can take a very long time to ever appear —
-      // re-check hourly and whenever the app comes back to the foreground,
-      // so a shipped update surfaces within one resume instead of only at
-      // the next cold launch.
+      // recheck periodically
       const check = () => registration.update().catch(() => {});
       setInterval(check, 60 * 60 * 1000);
       document.addEventListener('visibilitychange', () => {

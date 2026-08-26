@@ -1,7 +1,6 @@
 import type { Role, ComplaintStatusValue, ServiceTypeValue, ReportTypeValue } from './constants';
 
-// Base URL for the Spring Boot backend. Override with VITE_API_BASE_URL in a
-// .env file if the API isn't running on the default localhost:8080.
+// base url setup
 const API_BASE_URL: string =
     (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_BASE_URL ||
     'http://localhost:8080/api';
@@ -19,7 +18,7 @@ function getToken(): string | null {
   }
 }
 
-// Mirrors dto/response/ErrorResponse.java
+// response shape
 export interface ApiErrorBody {
   message: string;
   status: number;
@@ -37,7 +36,7 @@ export class ApiError extends Error {
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
   body?: unknown;
-  auth?: boolean; // attach Authorization header (default true)
+  auth?: boolean; // auth flag
   query?: Record<string, string | number | undefined | null>;
 }
 
@@ -83,21 +82,16 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 // ---------------------------------------------------------------------------
-// Auth — AuthController (/api/auth)
+// auth section
 // ---------------------------------------------------------------------------
 
-// dto/request/LoginRequest.java — `identifier` is either the account's email
-// or phone number, since a subscriber can now register with only one of the
-// two (see RegisterSubscriberRequest below).
+// request shape
 export interface LoginRequest {
   identifier: string;
   password: string;
 }
 
-// dto/request/RegisterSubscriberRequest.java — email and phone are each
-// individually optional, but the backend's @EmailOrPhoneRequired rejects a
-// request with neither. The Register page's contact-method picker decides
-// which of the two (or both) actually gets sent.
+// request shape
 export interface RegisterSubscriberRequest {
   name: string;
   email?: string;
@@ -108,11 +102,7 @@ export interface RegisterSubscriberRequest {
   captchaToken: string;
 }
 
-// dto/response/AuthResponse.java
-// department: for agents = assignedService (MOBILE/ADSL/FTTH), for managers = department name
-// token: null when emailVerificationRequired is true — register() returns
-// this for an email-registered account instead of logging it straight in;
-// AuthContext.login() must not be called with a null-token response.
+// response shape
 export interface AuthResponse {
   token: string | null;
   role: Role;
@@ -122,13 +112,13 @@ export interface AuthResponse {
   emailVerificationRequired: boolean;
 }
 
-// dto/request/VerifyEmailRequest.java
+// request shape
 export interface VerifyEmailRequest {
   email: string;
   code: string;
 }
 
-// dto/request/ResendVerificationRequest.java
+// request shape
 export interface ResendVerificationRequest {
   email: string;
 }
@@ -138,9 +128,7 @@ export const authApi = {
       request<AuthResponse>('/auth/register', { method: 'POST', body: data, auth: false }),
   login: (data: LoginRequest) =>
       request<AuthResponse>('/auth/login', { method: 'POST', body: data, auth: false }),
-  // Public — succeeds with the same shape as login() (a real token), since
-  // verifying is the last step of registration for an email-registered
-  // account.
+  // public endpoint
   verifyEmail: (data: VerifyEmailRequest) =>
       request<AuthResponse>('/auth/verify-email', { method: 'POST', body: data, auth: false }),
   resendVerification: (data: ResendVerificationRequest) =>
@@ -148,10 +136,10 @@ export const authApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Complaints (subscriber-facing) — ComplaintController (/api/complaints)
+// complaints section
 // ---------------------------------------------------------------------------
 
-// dto/request/ComplaintSubmissionRequest.java
+// request shape
 export interface ComplaintSubmissionRequest {
   idempotencyKey: string;
   type: string;
@@ -164,7 +152,7 @@ export interface ComplaintSubmissionRequest {
   captchaToken: string;
 }
 
-// dto/response/ComplaintResponse.java — the full detail view.
+// response shape
 export interface ComplaintResponse {
   id: number;
   ticketNumber: string;
@@ -179,18 +167,18 @@ export interface ComplaintResponse {
   updatedAt: string | null;
 }
 
-// dto/response/ComplaintListItemResponse.java — the row shown in list views.
+// response shape
 export interface ComplaintListItemResponse {
   id: number;
   ticketNumber: string;
   type: string;
-  serviceType: string; // added — needed for agent service-tab display
+  serviceType: string; // extra field
   status: ComplaintStatusValue;
   region: string;
   createdAt: string;
 }
 
-// dto/request/RatingRequest.java
+// request shape
 export interface RatingRequest {
   score: number;
   comment?: string;
@@ -200,7 +188,7 @@ export const complaintsApi = {
   submit: (data: ComplaintSubmissionRequest) =>
       request<ComplaintResponse>('/complaints', { method: 'POST', body: data }),
   listMine: () => request<ComplaintListItemResponse[]>('/complaints/mine'),
-  // Public — no auth required (see SecurityConfig permitAll for GET /api/complaints/track/**)
+  // public endpoint
   track: (ticketNumber: string) =>
       request<ComplaintResponse>(`/complaints/track/${encodeURIComponent(ticketNumber)}`, {
         auth: false,
@@ -210,19 +198,16 @@ export const complaintsApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Agent/manager complaint handling — AgentComplaintController (/api/agent/complaints)
+// agent section
 // ---------------------------------------------------------------------------
 
-// dto/request/ComplaintStatusUpdateRequest.java
+// request shape
 export interface ComplaintStatusUpdateRequest {
   newStatus: ComplaintStatusValue;
   resolutionNote?: string;
 }
 
-// dto/response/ComplaintStaffDetailResponse.java — everything ComplaintResponse
-// has plus who submitted it and who's assigned. Only ever returned by the
-// agent/manager-only by-ticket lookup below, never by the public
-// complaintsApi.track() — see that DTO's javadoc for why.
+// response shape
 export interface ComplaintStaffDetailResponse {
   id: number;
   ticketNumber: string;
@@ -243,9 +228,9 @@ export interface ComplaintStaffDetailResponse {
 
 export const agentComplaintsApi = {
   listAssigned: () => request<ComplaintListItemResponse[]>('/agent/complaints/assigned'),
-  // All complaints for the service the agent is assigned to (agent-only)
+  // list endpoint
   listServiceComplaints: () => request<ComplaintListItemResponse[]>('/agent/complaints/service'),
-  // Agent-only (not manager) — the backend casts the caller to Agent.
+  // agent only
   claim: (complaintId: number) =>
       request<ComplaintResponse>(`/agent/complaints/${complaintId}/claim`, { method: 'PATCH' }),
   updateStatus: (complaintId: number, data: ComplaintStatusUpdateRequest) =>
@@ -253,31 +238,29 @@ export const agentComplaintsApi = {
         method: 'PATCH',
         body: data,
       }),
-  // Full detail by ticket number — sender name/email/phone included.
+  // detail lookup
   getByTicket: (ticketNumber: string) =>
       request<ComplaintStaffDetailResponse>(`/agent/complaints/by-ticket/${encodeURIComponent(ticketNumber)}`),
 };
 
 // ---------------------------------------------------------------------------
-// Analytics (manager only) — AnalyticsController (/api/analytics)
+// analytics section
 // ---------------------------------------------------------------------------
 
-// dto/response/HeatMapResponse.java
+// response shape
 export interface HeatMapResponse {
   region: string;
   city: string;
   complaintCount: number;
 }
 
-// dto/response/RegionTotalResponse.java — always the complete per-region
-// totals (at most 10 rows), independent of the paginated city breakdown
-// above. Feeds CameroonHeatMap.tsx's map shading.
+// response shape
 export interface RegionTotalResponse {
   region: string;
   complaintCount: number;
 }
 
-// dto/response/KpiResponse.java
+// response shape
 export interface KpiResponse {
   groupLabel: string;
   averageResolutionTimeHours: number;
@@ -285,7 +268,7 @@ export interface KpiResponse {
   resolvedComplaints: number;
 }
 
-// dto/response/RecurringPatternResponse.java
+// response shape
 export interface RecurringPatternResponse {
   type: string;
   region: string;
@@ -294,12 +277,7 @@ export interface RecurringPatternResponse {
 }
 
 export const analyticsApi = {
-  // start/end are required LocalDate (YYYY-MM-DD) query params; serviceType
-  // optional. Paginated — backs the heatmap page's "by city" table. Region
-  // totals for the map itself come from regionTotals() below instead, since
-  // the map needs every region's true total regardless of which page of
-  // this table is showing.
-  // sortBy: 'region' | 'city' | undefined (complaint count descending, the default)
+  // query params note
   heatMap: (
       start: string,
       end: string,
@@ -319,17 +297,17 @@ export const analyticsApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Reports (manager only) — ReportController (/api/reports)
+// reports section
 // ---------------------------------------------------------------------------
 
-// dto/request/ReportGenerationRequest.java
+// request shape
 export interface ReportGenerationRequest {
   type: ReportTypeValue;
-  startDate: string; // LocalDate, YYYY-MM-DD
+  startDate: string; // date format
   endDate: string;
 }
 
-// dto/response/ReportResponse.java
+// response shape
 export interface ReportResponse {
   id: number;
   type: ReportTypeValue;
@@ -342,11 +320,9 @@ export interface ReportResponse {
 export const reportsApi = {
   generate: (data: ReportGenerationRequest) =>
       request<ReportResponse>('/reports', { method: 'POST', body: data }),
-  // Full history for this manager, newest first — not just what's been
-  // generated in the current browser session.
+  // list history
   list: () => request<ReportResponse[]>('/reports'),
-  // Binary download — needs the Authorization header attached manually since
-  // this isn't a JSON request/response.
+  // download handling
   download: async (reportId: number): Promise<Blob> => {
     const token = getToken();
     const headers: Record<string, string> = {};
@@ -362,11 +338,10 @@ export const reportsApi = {
 };
 
 // ---------------------------------------------------------------------------
-// All complaints (manager only) — ManagerComplaintController (/api/manager/complaints)
-// Powers the Dashboard Overview table: every complaint, filterable and paged.
+// manager complaints section
 // ---------------------------------------------------------------------------
 
-// dto/response/ComplaintManagerListItemResponse.java — one table row.
+// response shape
 export interface ComplaintManagerListItemResponse {
   id: number;
   ticketNumber: string;
@@ -377,15 +352,15 @@ export interface ComplaintManagerListItemResponse {
   city: string;
   status: ComplaintStatusValue;
   createdAt: string;
-  assignedAgentName: string | null; // null when unassigned
+  assignedAgentName: string | null; // may be empty
 }
 
-// Spring's Page<T> JSON shape (org.springframework.data.domain.Page)
+// page shape
 export interface SpringPage<T> {
   content: T[];
   totalElements: number;
   totalPages: number;
-  number: number; // current page, 0-indexed
+  number: number; // page index
   size: number;
 }
 
@@ -394,20 +369,20 @@ export interface ManagerComplaintFilters {
   serviceType?: ServiceTypeValue;
   region?: string;
   status?: ComplaintStatusValue;
-  start?: string; // LocalDate, YYYY-MM-DD
-  end?: string; // LocalDate, YYYY-MM-DD
+  start?: string; // date format
+  end?: string; // date format
   page?: number;
   size?: number;
 }
 
-// dto/response/AgentWithLoadResponse.java
+// response shape
 export interface AgentWithLoadResponse {
   id: number;
   name: string;
   email: string;
   assignedService: string;
   assignedRegion: string | null;
-  assignedComplaintCount: number; // active (non-resolved) complaints count
+  assignedComplaintCount: number; // count field
 }
 
 export const managerComplaintsApi = {
@@ -415,13 +390,13 @@ export const managerComplaintsApi = {
       request<SpringPage<ComplaintManagerListItemResponse>>('/manager/complaints', {
         query: { ...filters },
       }),
-  // POST /api/manager/complaints/{id}/assign — manager assigns or re-assigns an agent
+  // assign endpoint
   assignAgent: (complaintId: number, agentId: number) =>
       request<ComplaintResponse>(`/manager/complaints/${complaintId}/assign`, {
         method: 'POST',
         body: { agentId },
       }),
-  // GET /api/manager/complaints/agents-by-service?service=MOBILE
+  // lookup endpoint
   agentsByService: (service: string) =>
       request<AgentWithLoadResponse[]>('/manager/complaints/agents-by-service', {
         query: { service },
@@ -429,9 +404,7 @@ export const managerComplaintsApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Categories (manager only) — CategoryController (/api/manager/categories)
-// CategoryController takes name/description as @RequestParam, i.e. query
-// params, not a JSON body.
+// categories section
 // ---------------------------------------------------------------------------
 
 export interface Category {
@@ -450,9 +423,7 @@ export const categoriesApi = {
 };
 
 // ---------------------------------------------------------------------------
-// Categories (subscriber-facing read) — SubscriberCategoryController (/api/categories)
-// Powers the complaint-type picker on the submission form, so whatever the
-// manager adds/edits/deletes on the configuration page shows up there.
+// public categories section
 // ---------------------------------------------------------------------------
 
 export const subscriberCategoriesApi = {
@@ -460,11 +431,10 @@ export const subscriberCategoriesApi = {
 };
 
 // ---------------------------------------------------------------------------
-// User management (manager only) — UserManagementController (/api/manager/users)
+// user management section
 // ---------------------------------------------------------------------------
 
-// dto/request/UserCreateRequest.java — role must be AGENT or MANAGER; the
-// backend rejects anything else.
+// request shape
 export interface UserCreateRequest {
   name: string;
   email: string;
@@ -476,7 +446,7 @@ export interface UserCreateRequest {
   department?: string;
 }
 
-// dto/request/UserUpdateRequest.java — no email/password/role change support.
+// request shape
 export interface UserUpdateRequest {
   name?: string;
   phone?: string;
@@ -486,8 +456,7 @@ export interface UserUpdateRequest {
   department?: string;
 }
 
-// dto/response/UserResponse.java — email/phone are nullable now that a
-// subscriber can register with just one of the two.
+// response shape
 export interface UserResponse {
   id: number;
   name: string;
@@ -497,9 +466,7 @@ export interface UserResponse {
   active: boolean;
 }
 
-// dto/response/AgentImportRowResult.java — one row's outcome. `email` is the
-// real address the agent should log in with (it may carry a digit suffix if
-// the naive surname.name@camtel.com collided with an existing account).
+// row result shape
 export interface AgentImportRowResult {
   row: number;
   name: string;
@@ -508,7 +475,7 @@ export interface AgentImportRowResult {
   message: string;
 }
 
-// dto/response/AgentImportResultResponse.java
+// response shape
 export interface AgentImportResultResponse {
   totalRows: number;
   importedCount: number;
@@ -517,12 +484,10 @@ export interface AgentImportResultResponse {
 }
 
 // ---------------------------------------------------------------------------
-// In-app notifications (all roles) — NotificationController (/api/notifications)
-// Polled by NotificationContext every ~5s. Distinct from the SMS/email
-// Notification entity on the backend — this one is bell/toast only.
+// notifications section
 // ---------------------------------------------------------------------------
 
-// dto/response/AppNotificationResponse.java
+// response shape
 export interface AppNotificationResponse {
   id: number;
   type: string;
@@ -533,8 +498,7 @@ export interface AppNotificationResponse {
 }
 
 export const notificationsApi = {
-  // since: ISO LocalDateTime cursor — omit for the initial page (most recent
-  // ~30), pass the last-seen createdAt to fetch only what's new.
+  // cursor param note
   list: (since?: string) => request<AppNotificationResponse[]>('/notifications', { query: { since } }),
   unreadCount: () => request<number>('/notifications/unread-count'),
   markRead: (id: number) => request<void>(`/notifications/${id}/read`, { method: 'PATCH' }),
@@ -549,8 +513,7 @@ export const usersApi = {
   update: (userId: number, data: UserUpdateRequest) =>
       request<UserResponse>(`/manager/users/${userId}`, { method: 'PUT', body: data }),
   deactivate: (userId: number) => request<void>(`/manager/users/${userId}`, { method: 'DELETE' }),
-  // multipart upload — not JSON, so this bypasses request() the same way
-  // reportsApi.download() does for binary responses.
+  // upload handling
   importAgents: async (file: File): Promise<AgentImportResultResponse> => {
     const token = getToken();
     const headers: Record<string, string> = {};

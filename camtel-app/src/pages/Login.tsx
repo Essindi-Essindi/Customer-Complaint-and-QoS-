@@ -9,10 +9,7 @@ import { PasswordInput } from '../components/PasswordInput';
 import { ChevronLeftIcon } from '../components/icons';
 import camtelLogo from '../assets/camtel-logo.png';
 
-// LoginRequest.identifier accepts either the account's email or phone
-// number (dto/request/LoginRequest.java) — a subscriber who registered
-// phone-only has no email to log in with, so this form collects a single
-// generic identifier field rather than assuming email.
+// page component
 export default function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -32,10 +29,7 @@ export default function Login() {
     setLoading(true);
     try {
       const data = await authApi.login({ identifier: identifier.trim(), password });
-      // Deliberately generic: reads exactly like a wrong password, not
-      // "this is a staff account" — telling an attacker probing an
-      // identifier that the account exists (and what kind) is a real
-      // account-enumeration leak, not just unfriendly wording.
+      // wording note
       if (data.role !== 'SUBSCRIBER') {
         setError(t('common.invalidCredentials'));
         return;

@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.model.enums;
 
-// sms delivery state
+// enum values
 public enum NotificationStatus {
     QUEUED,
     SENT,

@@ -8,8 +8,7 @@ interface Props {
   variant: 'agent' | 'manager';
 }
 
-// Logout lives in StaffHeader now (top, same position as SubscriberNav's),
-// not here — see StaffHeader.tsx.
+// see StaffHeader.tsx
 export function StaffSidebar({ variant }: Props) {
   const location = useLocation();
   const { t } = useI18n();

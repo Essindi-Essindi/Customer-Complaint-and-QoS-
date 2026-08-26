@@ -7,7 +7,7 @@ import lombok.Setter;
 
 import java.time.LocalDate;
 
-// payload to request a pdf report
+// request payload
 @Getter
 @Setter
 public class ReportGenerationRequest {

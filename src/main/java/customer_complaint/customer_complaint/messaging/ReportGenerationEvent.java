@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.io.Serializable;
 import java.time.LocalDate;
 
-// message payload for the report queue
+// event payload
 @Getter
 @Setter
 @NoArgsConstructor

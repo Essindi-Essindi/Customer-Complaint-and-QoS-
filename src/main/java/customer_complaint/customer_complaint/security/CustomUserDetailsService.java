@@ -8,12 +8,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-// Reloads the authenticated user on every request. Despite the interface's
-// "username" naming, the value passed in is the JWT subject, which is the
-// user's numeric id (see JwtTokenProvider) — not their email, since email is
-// now optional for subscribers. Only JwtAuthenticationFilter calls this;
-// login itself is handled entirely by AuthServiceImpl without going through
-// Spring's AuthenticationManager.
+// helper service
 @Service
 @RequiredArgsConstructor
 public class CustomUserDetailsService implements UserDetailsService {

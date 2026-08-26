@@ -6,10 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// row shown in the manager's "all complaints" table (Dashboard Overview grid).
-// Richer than ComplaintListItemResponse (subscriber/agent name, city, service)
-// because the manager view needs to display and act on every complaint, not
-// just a subscriber's own or an agent's assigned set.
+// manager list row data
 @Getter
 @Setter
 @AllArgsConstructor
@@ -24,5 +21,5 @@ public class ComplaintManagerListItemResponse {
     private String city;
     private String status;
     private LocalDateTime createdAt;
-    private String assignedAgentName; // null when unassigned
+    private String assignedAgentName; // may be null
 }

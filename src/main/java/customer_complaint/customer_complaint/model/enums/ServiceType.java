@@ -1,6 +1,6 @@
 package customer_complaint.customer_complaint.model.enums;
 
-// which CAMTEL service the complaint is about
+// enum values
 public enum ServiceType {
     MOBILE,
     ADSL,

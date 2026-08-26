@@ -8,13 +8,7 @@ import { Toast } from '../components/Toast';
 import type { AuthResponse } from '../lib/api';
 import camtelLogo from '../assets/camtel-logo.png';
 
-// Standalone page for /verify-email — reachable directly (e.g. the "verify
-// email" link on Login, a bookmarked/refreshed link, or a link in the code
-// email itself), which is why email is a normal editable field pre-filled
-// from route state rather than a hard requirement of arriving from Register.
-// Register.tsx itself no longer routes here on signup — it pops the same
-// VerifyEmailForm open in a Modal right on the registration page instead, so
-// this page exists purely for the "come back later" path.
+// page component
 export default function VerifyEmail() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -25,10 +19,7 @@ export default function VerifyEmail() {
   const [toast, setToast] = useState<string | null>(null);
 
   const handleVerified = (res: AuthResponse) => {
-    // Unlike register(), a successful verify-email always carries a real
-    // token — this is the point the account actually becomes usable, so log
-    // straight in rather than sending them to /login to type their password
-    // again.
+    // log user in
     login(res);
     setToast(t('verify.success'));
     setTimeout(() => navigate('/my-complaints'), 1200);

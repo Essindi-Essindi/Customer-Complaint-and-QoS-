@@ -20,7 +20,7 @@ function loadStored(): Theme {
   } catch {
     /* ignore */
   }
-  // Fall back to the visitor's OS preference, defaulting to the night theme.
+  // default fallback
   if (typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: light)').matches) {
     return 'light';
   }
@@ -53,9 +53,7 @@ function withThemeTransition(apply: () => void) {
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(loadStored);
 
-  // Layout effect (not a passive effect) so the attribute flip lands
-  // synchronously inside the flushSync above — required for the view
-  // transition to snapshot the correct "after" state.
+  // sync effect timing
   useLayoutEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     try {

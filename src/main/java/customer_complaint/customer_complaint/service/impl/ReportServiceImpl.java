@@ -47,7 +47,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-// creates the report row, pdf built async
+// report service impl
 @Service
 @RequiredArgsConstructor
 public class ReportServiceImpl implements ReportService {
@@ -82,11 +82,7 @@ public class ReportServiceImpl implements ReportService {
         report.setEndDate(request.getEndDate());
         reportRepository.save(report);
 
-        // Same reasoning as NotificationServiceImpl.queueSms: the Report row above is already
-        // saved successfully, so if the broker is unreachable we don't want to fail the whole
-        // request. The PDF simply stays pending (filePath null) until the queue is back;
-        // downloading it in the meantime already returns a clean "not ready" response via
-        // getReportForDownload(), so this degrades gracefully instead of lying about a failure.
+        // handle error
         try {
             reportEventPublisher.publish(new ReportGenerationEvent(
                     report.getId(), report.getType().name(), report.getStartDate(), report.getEndDate()));
@@ -117,26 +113,16 @@ public class ReportServiceImpl implements ReportService {
             report.setFilePath(filePath.toString());
             reportRepository.save(report);
         } catch (IOException e) {
-            // Leave filePath null so getReportForDownload() keeps reporting
-            // "not ready" instead of pointing at a file that doesn't exist.
+            // handle error
             log.error("Failed to generate PDF for report {}", report.getId(), e);
         }
     }
 
-    // A column in one of the tables below: a header label plus a fixed
-    // width in PDF points. Every table's column widths sum to TABLE_WIDTH so
-    // the table always spans the same left/right margins as the header box.
+    // helper type
     private record Column(String header, float width) {
     }
 
-    // CAMTEL corporate report template — mirrors the layout of the
-    // reference "2026_ACTIVITY_REPORT_..." document (repo root): a header
-    // box on every page with the logo top-left, title top-center, and a
-    // Code/Version/Date/Page metadata block top-right, under a rule line.
-    // Only the header layout is borrowed — the body below it is this
-    // report's own: a key-metrics table, status/service breakdown tables,
-    // then the full complaint listing as an actual bordered/shaded table
-    // (not hand-spaced text) so it reads as a real report, not a dump.
+    // build report
     private void writePdf(Report report, List<Complaint> complaints, Path filePath) throws IOException {
         PDFont regular = new PDType1Font(Standard14Fonts.FontName.HELVETICA);
         PDFont bold = new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD);
@@ -151,8 +137,7 @@ public class ReportServiceImpl implements ReportService {
         double resolutionRate = total > 0 ? resolved * 100.0 / total : 0;
         double avgResolutionHours = averageResolutionHours(complaints);
 
-        // Ratings: one bulk query for every complaint in the period rather
-        // than one per row — see ResolutionRepository.findByComplaintIdIn.
+        // fetch data
         List<Long> complaintIds = complaints.stream().map(Complaint::getId).toList();
         List<Resolution> resolutions =
                 complaintIds.isEmpty() ? List.of() : resolutionRepository.findByComplaintIdIn(complaintIds);
@@ -174,7 +159,7 @@ public class ReportServiceImpl implements ReportService {
                             + "  on  " + report.getGeneratedAt().format(DATE_FMT));
             st.y -= LEADING * 0.5f;
 
-            // ---- Key metrics --------------------------------------------------
+            // -- section --
             Column[] metricCols = {new Column("Metric", 260), new Column("Value", 235)};
             String[][] metricRows = {
                     {"Total complaints", String.valueOf(total)},
@@ -189,7 +174,7 @@ public class ReportServiceImpl implements ReportService {
             st.y = drawTable(st.cs, x, st.y, metricCols, metricRows, regular, bold, 9.5f);
             st.y -= LEADING;
 
-            // ---- Status breakdown -----------------------------------------------
+            // -- section --
             Column[] statusCols = {new Column("Status", 200), new Column("Count", 145), new Column("Share", 150)};
             String[][] statusRows = Arrays.stream(ComplaintStatus.values())
                     .map(s -> {
@@ -203,7 +188,7 @@ public class ReportServiceImpl implements ReportService {
             st.y = drawTable(st.cs, x, st.y, statusCols, statusRows, regular, bold, 9.5f);
             st.y -= LEADING;
 
-            // ---- By service type --------------------------------------------
+            // -- section --
             Column[] serviceCols = {
                     new Column("Service", 140), new Column("Total", 110),
                     new Column("Resolved", 110), new Column("Avg Resolution (h)", 135),
@@ -224,7 +209,7 @@ public class ReportServiceImpl implements ReportService {
             st.y = drawTable(st.cs, x, st.y, serviceCols, serviceRows, regular, bold, 9.5f);
             st.y -= LEADING;
 
-            // ---- Full complaint listing ---------------------------------------
+            // -- section --
             Column[] detailCols = {
                     new Column("Ticket", 65), new Column("Date", 58), new Column("Type", 82),
                     new Column("Service", 42), new Column("Status", 50), new Column("Region/City", 88),
@@ -274,10 +259,7 @@ public class ReportServiceImpl implements ReportService {
         };
     }
 
-    // Resolution time: (updatedAt - createdAt) in hours for every RESOLVED
-    // complaint in the group, averaged. Same formula AnalyticsServiceImpl
-    // uses for the KPI dashboard, so the report and the dashboard never
-    // disagree about what "average resolution time" means.
+    // helper method
     private double averageResolutionHours(List<Complaint> complaints) {
         return complaints.stream()
                 .filter(c -> c.getStatus() == ComplaintStatus.RESOLVED && c.getUpdatedAt() != null)
@@ -290,13 +272,9 @@ public class ReportServiceImpl implements ReportService {
         return s == null ? "" : s;
     }
 
-    // ---- low-level page/table rendering ------------------------------------
+    // -- section --
 
-    // Mutable render cursor: which page/content-stream we're currently
-    // drawing into and how far down it we've gotten. Passed by reference to
-    // every draw helper so a mid-table page break (see ensureSpace) is
-    // visible to the caller without every helper having to return and
-    // re-thread a tuple of (page, cs, y, pageNumber).
+    // helper type
     private static final class RenderState {
         PDPage page;
         PDPageContentStream cs;
@@ -315,10 +293,7 @@ public class ReportServiceImpl implements ReportService {
         return st;
     }
 
-    // Starts a fresh page (closing the current one first) if the next block
-    // of `needed` points wouldn't fit above the bottom margin. Returns
-    // whether a break happened, so callers drawing a table can redraw the
-    // column header row on the new page.
+    // helper method
     private boolean ensureSpace(RenderState st, float needed, PDDocument document, PDImageXObject logo, Report report)
             throws IOException {
         if (st.y - needed >= MARGIN) return false;
@@ -331,9 +306,7 @@ public class ReportServiceImpl implements ReportService {
         return true;
     }
 
-    // Conservative height estimate for a small table (header + rows) used to
-    // reserve space up front — the aggregate tables (metrics/status/service)
-    // never break mid-table, they always fit on one page.
+    // helper method
     private float tableHeight(int rowCount, float fontSize) {
         return (rowCount + 1) * (fontSize + 7f);
     }
@@ -417,10 +390,7 @@ public class ReportServiceImpl implements ReportService {
         return bottom;
     }
 
-    // Shortens `text` with a trailing "..." so it fits within maxWidth at
-    // this font/size — measured against the real (proportional) glyph
-    // widths rather than a fixed character count, so it doesn't over- or
-    // under-truncate depending on which letters happen to be in it.
+    // helper method
     private String truncate(PDFont font, float fontSize, String text, float maxWidth) throws IOException {
         if (text.isEmpty() || font.getStringWidth(text) / 1000f * fontSize <= maxWidth) return text;
 
@@ -463,10 +433,7 @@ public class ReportServiceImpl implements ReportService {
         cs.showText("Complaint Management — " + report.getType() + " Report");
         cs.endText();
 
-        // Code/Version/Date/Page metadata block, top-right — same fields the
-        // reference CAMTEL template carries on every page. No formal
-        // document-code system backs these reports, so Code stays "null"
-        // rather than inventing one.
+        // set value
         float metaX = pageWidth - MARGIN - 150f;
         float metaY = top - 2f;
         String[] metaLines = {

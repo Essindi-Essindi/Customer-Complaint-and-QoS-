@@ -5,7 +5,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-// attachments for a given complaint
+// query records
 public interface AttachmentRepository extends JpaRepository<Attachment, Long> {
 
     List<Attachment> findByComplaintId(Long complaintId);

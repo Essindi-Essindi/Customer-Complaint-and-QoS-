@@ -6,7 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-// notifications by complaint or status
+// custom finders
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     List<Notification> findByComplaintId(Long complaintId);

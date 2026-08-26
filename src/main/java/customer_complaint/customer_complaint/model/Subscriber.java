@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// a CAMTEL customer who submits complaints
+// entity class
 @Entity
 @DiscriminatorValue("SUBSCRIBER")
 @Getter

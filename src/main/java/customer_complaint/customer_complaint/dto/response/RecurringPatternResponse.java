@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-// a flagged recurring complaint pattern
+// pattern result data
 @Getter
 @Setter
 @AllArgsConstructor

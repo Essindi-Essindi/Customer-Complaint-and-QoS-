@@ -11,13 +11,7 @@ import { OTHER } from '../lib/cameroonLocations';
 import { ChevronLeftIcon } from '../components/icons';
 import { useAutoRefresh } from '../lib/useAutoRefresh';
 
-// GET /api/complaints/track/{ticketNumber} returns the full ComplaintResponse:
-// id, ticketNumber, type, serviceType, region, city, locality, description,
-// status, createdAt, updatedAt. The backend does NOT return a resolution
-// note, assigned agent name, rating, or an audit trail on this (or any)
-// endpoint, so none of that is shown here — showing it would just be
-// inventing data. city/locality show the translated "Other / not listed"
-// label instead of the raw OTHER sentinel when that's what was picked.
+// page component
 export default function ComplaintDetail() {
   const { ticketNumber } = useParams<{ ticketNumber: string }>();
   const { t, lang } = useI18n();
@@ -53,9 +47,7 @@ export default function ComplaintDetail() {
     };
   }, [ticketNumber, t]);
 
-  // Auto-refresh: the assigned agent or a manager can move this ticket's
-  // status forward at any time, so re-poll every 5s to reflect it live
-  // instead of the subscriber having to reload the page.
+  // auto refresh status
   useAutoRefresh(() => {
     if (!ticketNumber) return;
     complaintsApi.track(ticketNumber).then(setComplaint).catch(() => {});

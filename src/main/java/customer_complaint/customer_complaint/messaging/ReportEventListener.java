@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.stereotype.Component;
 
-// consumes report tasks and builds the pdf
+// handle event
 @Component
 @RequiredArgsConstructor
 public class ReportEventListener {

@@ -20,7 +20,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AppNotificationServiceImpl implements AppNotificationService {
 
-    // Most a single poll response (or the initial page load) will ever carry.
+    // config value
     private static final int PAGE_LIMIT = 30;
 
     private final AppNotificationRepository appNotificationRepository;

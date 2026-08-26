@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-// one kpi row grouped by type/team/region
+// kpi row data
 @Getter
 @Setter
 @AllArgsConstructor

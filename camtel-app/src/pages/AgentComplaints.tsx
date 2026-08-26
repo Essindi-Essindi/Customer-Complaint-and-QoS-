@@ -21,12 +21,12 @@ export default function AgentComplaints() {
   const { department } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('service');
 
-  // --- service-level complaints (all complaints in agent's service) ---
+  // setup state
   const [serviceComplaints, setServiceComplaints] = useState<ComplaintListItemResponse[]>([]);
   const [serviceLoading, setServiceLoading] = useState(true);
   const [serviceError, setServiceError] = useState('');
 
-  // --- agent's personally assigned complaints ---
+  // setup state
   const [myComplaints, setMyComplaints] = useState<ComplaintListItemResponse[]>([]);
   const [myLoading, setMyLoading] = useState(true);
   const [myError, setMyError] = useState('');
@@ -38,10 +38,7 @@ export default function AgentComplaints() {
   const [claimError, setClaimError] = useState('');
 
   const [selected, setSelected] = useState<ComplaintListItemResponse | null>(null);
-  // Full detail (city, locality, description, sender) — fetched on open()
-  // rather than carried on the list row, so list payloads stay lean. null
-  // while loading or if the fetch failed; selected/modalError still drive
-  // the modal in that case.
+  // detail state
   const [detail, setDetail] = useState<ComplaintStaffDetailResponse | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [status, setStatus] = useState<ComplaintStatusValue>('ASSIGNED');
@@ -49,8 +46,7 @@ export default function AgentComplaints() {
   const [saving, setSaving] = useState(false);
   const [modalError, setModalError] = useState('');
 
-  // silent=true skips the loading-spinner flip, used by the 5s auto-refresh
-  // tick below so it doesn't blank the table out from under the user.
+  // refresh helper
   const refreshService = (silent = false) => {
     if (!silent) setServiceLoading(true);
     agentComplaintsApi
@@ -76,9 +72,7 @@ export default function AgentComplaints() {
 
   useEffect(() => refreshAll(), [t]);
 
-  // Other agents/managers can claim, assign or resolve complaints in this
-  // service at any time — silently refresh both tabs every 5s so the tables
-  // stay live without a manual reload or a loading-spinner flicker.
+  // auto refresh tables
   useAutoRefresh(() => refreshAll(true));
 
   const open = (c: ComplaintListItemResponse) => {
@@ -189,7 +183,7 @@ export default function AgentComplaints() {
           <main className="page-content">
             <h1>{t('page.agentComplaints')}</h1>
 
-            {/* Claim by ticket */}
+            {/* form section */}
             <form onSubmit={handleClaim} className="form-card claim-form">
               <div className="field">
                 <label>{t('agent.claimByTicket')}</label>
@@ -207,7 +201,7 @@ export default function AgentComplaints() {
               </button>
             </form>
 
-            {/* Tab bar */}
+            {/* tab section */}
             <div className="tab-bar" style={{ marginTop: 24, marginBottom: 0 }}>
               <button
                   type="button"

@@ -2,18 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
+// config setup
 export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      // Silently swaps in new precached assets in the background and
-      // activates them once useRegisterSW (PwaUpdatePrompt.tsx) confirms the
-      // user wants to reload, rather than forcing an update on next visit.
+      // update behavior
       registerType: 'autoUpdate',
-      // Registration is done manually via useRegisterSW in
-      // PwaUpdatePrompt.tsx (so it can drive an in-app update banner);
-      // don't also inject the plugin's own auto-registering script.
+      // registration setup
       injectRegister: false,
       includeAssets: ['favicon.svg', 'icons.svg', 'Camtel logo.png'],
       manifest: {
@@ -38,22 +34,17 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Precached app-shell navigations should never fall back for API
-        // calls — this only affects `mode: 'navigate'` requests (page
-        // loads), not the fetch()/XHR calls complaintsApi etc. make, but is
-        // cheap insurance against ever serving index.html for an /api/ URL.
+        // fallback denylist
         navigateFallbackDenylist: [/^\/api\//],
         runtimeCaching: [
           {
-            // Google Fonts stylesheet — small and changes rarely, but check
-            // for updates in the background rather than caching forever.
+            // cache setup
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
             handler: 'StaleWhileRevalidate',
             options: { cacheName: 'google-fonts-stylesheets' },
           },
           {
-            // The actual font files are immutable per URL, so cache-first
-            // with a long expiry is safe and keeps the UI legible offline.
+            // cache setup
             urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
             handler: 'CacheFirst',
             options: {
@@ -65,9 +56,7 @@ export default defineConfig({
         ],
       },
       devOptions: {
-        // The service worker only activates in a real build (`vite build` +
-        // `vite preview`) — enabling it under `vite dev` mostly just adds
-        // noise and stale-cache confusion during development.
+        // dev flag
         enabled: false,
       },
     }),

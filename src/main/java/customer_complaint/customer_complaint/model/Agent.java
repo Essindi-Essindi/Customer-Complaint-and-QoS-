@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-// staff handling complaints in a region/service
+// entity class
 @Entity
 @DiscriminatorValue("AGENT")
 @Getter

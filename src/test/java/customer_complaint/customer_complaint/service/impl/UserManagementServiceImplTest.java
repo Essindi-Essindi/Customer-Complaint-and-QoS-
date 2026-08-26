@@ -26,10 +26,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-// Covers UserManagementServiceImpl.importAgents end to end against a real
-// in-memory .xlsx (built with POI, same library the importer itself uses)
-// rather than mocking POI's API — that way a change to how cells are read
-// would actually be caught here.
+// test setup notes
 class UserManagementServiceImplTest {
 
     private final UserRepository userRepository = mock(UserRepository.class);
@@ -67,15 +64,13 @@ class UserManagementServiceImplTest {
                 new String[]{"Name", "Surname", "Email", "Service", "Region", "Password", "Phone"},
                 new String[][]{
                         {"Jean", "Mballa", "mballa.jean@camtel.com", "mobile", "Centre", "Camtel@2026", "677010203"},
-                        // Same email as the row above -> must be rejected,
-                        // never silently renamed to something else.
+                        // duplicate test row
                         {"Jean", "Mballa", "mballa.jean@camtel.com", "ftth", "Littoral", "Another@Pass1", ""},
-                        // Missing Region -> should fail without touching the
-                        // rows around it.
+                        // invalid test row
                         {"NoRegion", "Agent", "noregion.agent@camtel.com", "ADSL", "", "Camtel@2026", ""},
-                        // Unknown service value -> should fail with a clear reason.
+                        // invalid test row
                         {"Bad", "Service", "bad.service@camtel.com", "SATELLITE", "West", "Camtel@2026", ""},
-                        // Malformed email -> should fail with a clear reason.
+                        // invalid test row
                         {"No", "AtSign", "not-an-email", "MOBILE", "West", "Camtel@2026", ""},
                 });
 

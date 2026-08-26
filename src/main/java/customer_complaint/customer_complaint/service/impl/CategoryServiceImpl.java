@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 
-// basic category crud
+// category service impl
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {

@@ -26,7 +26,7 @@ import org.springframework.stereotype.Service;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 
-// hashes password, issues jwt on success, handles email verification codes
+// auth service impl
 @Service
 @RequiredArgsConstructor
 public class AuthServiceImpl implements AuthService {
@@ -41,10 +41,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse register(RegisterSubscriberRequest request) {
-        // @EmailOrPhoneRequired already guarantees at least one of these is
-        // non-blank by the time we get here; blank-to-null keeps whichever
-        // one wasn't chosen from being stored as "" (which would collide
-        // with every other omitted field under the column's unique index).
+        // check status
         String email = blankToNull(request.getEmail());
         String phone = blankToNull(request.getPhone());
 
@@ -63,9 +60,7 @@ public class AuthServiceImpl implements AuthService {
         subscriber.setCamtelAccountNumber(request.getCamtelAccountNumber());
         subscriber.setServiceType(request.getServiceType());
 
-        // Only an email registration has anything to verify — phone-only
-        // subscribers keep User's default emailVerified = true and can log
-        // in immediately, same as before this feature existed.
+        // check status
         boolean needsVerification = email != null;
         if (needsVerification) {
             subscriber.setEmailVerified(false);
@@ -77,8 +72,7 @@ public class AuthServiceImpl implements AuthService {
 
         if (needsVerification) {
             emailService.sendVerificationCode(subscriber, subscriber.getVerificationCode());
-            // No token: an account that hasn't verified its email yet can't
-            // be handed a working session just by registering.
+            // check status
             return new AuthResponse(null, "SUBSCRIBER", subscriber.getId(), subscriber.getName(), null, true);
         }
 
@@ -95,7 +89,7 @@ public class AuthServiceImpl implements AuthService {
             throw new InvalidCredentialsException("Invalid credentials");
         }
 
-        // FIX: a deactivated user was previously able to log in and get a brand-new valid token.
+        // check status
         if (!user.isActive()) {
             throw new AccountDisabledException("This account has been deactivated. Contact your administrator.");
         }
@@ -108,8 +102,7 @@ public class AuthServiceImpl implements AuthService {
         String role = user.getClass().getSimpleName().toUpperCase();
         String token = jwtTokenProvider.generateToken(String.valueOf(user.getId()), role);
 
-        // Expose the agent's assigned service (= their department/team) so the
-        // frontend can show it on the dashboard without a separate round-trip.
+        // set value
         String department = null;
         if (user instanceof Agent agent) {
             department = agent.getAssignedService();
@@ -182,8 +175,7 @@ public class AuthServiceImpl implements AuthService {
         return (value == null || value.isBlank()) ? null : value;
     }
 
-    // Zero-padded so it's always exactly 6 digits (e.g. "004821"), never a
-    // shorter number that would look wrong in the email.
+    // helper method
     private static String generateCode() {
         return String.format("%06d", RANDOM.nextInt(1_000_000));
     }

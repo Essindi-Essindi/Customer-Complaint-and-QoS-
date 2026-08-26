@@ -6,7 +6,7 @@ import lombok.Setter;
 
 import java.time.LocalDateTime;
 
-// one in-app notification row, as shown in the bell dropdown / toast popup
+// notification row data
 @Getter
 @Setter
 @AllArgsConstructor

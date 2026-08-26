@@ -7,7 +7,7 @@ import lombok.Setter;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-// metadata for a generated report
+// report metadata
 @Getter
 @Setter
 @AllArgsConstructor

@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// manager endpoints for categories
+// endpoint definitions
 @RestController
 @RequestMapping("/api/manager/categories")
 @RequiredArgsConstructor

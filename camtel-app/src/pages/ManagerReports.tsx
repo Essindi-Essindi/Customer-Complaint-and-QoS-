@@ -9,13 +9,7 @@ import { REPORT_TYPES, type ReportTypeValue } from '../lib/constants';
 import { Toast } from '../components/Toast';
 import { useI18n } from '../context/I18nContext';
 
-// POST /api/reports takes {type, startDate, endDate} and returns a
-// ReportResponse right away — the PDF itself is built asynchronously (via
-// RabbitMQ) and filePath stays null until it's ready, so GET
-// /{id}/download can 409 with "still generating" if you're too quick.
-// GET /api/reports returns this manager's full history (newest first), so
-// it survives a refresh/new session instead of only showing what got
-// generated in the current page load.
+// page component
 export default function ManagerReports() {
   const { t } = useI18n();
   const [reportType, setReportType] = useState<ReportTypeValue>('WEEKLY');

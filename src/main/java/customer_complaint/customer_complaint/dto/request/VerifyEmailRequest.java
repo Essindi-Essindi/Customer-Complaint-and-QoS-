@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 
-// payload for confirming the code emailed during registration
+// request payload
 @Getter
 @Setter
 public class VerifyEmailRequest {

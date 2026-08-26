@@ -4,8 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.Setter;
 
-// agent info + how many complaints are currently assigned to them
-// used by manager when assigning an agent to a complaint
+// agent load info
 @Getter
 @Setter
 @AllArgsConstructor
@@ -16,5 +15,5 @@ public class AgentWithLoadResponse {
     private String email;
     private String assignedService;
     private String assignedRegion;
-    private long assignedComplaintCount; // number of non-resolved complaints currently on this agent
+    private long assignedComplaintCount; // extra info
 }

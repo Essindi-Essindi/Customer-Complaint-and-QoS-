@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-// generate and download pdf reports
+// endpoint definitions
 @RestController
 @RequestMapping("/api/reports")
 @RequiredArgsConstructor
@@ -32,8 +32,7 @@ public class ReportController {
         return ResponseEntity.ok(reportService.requestGeneration(principal.getUser().getId(), request));
     }
 
-    // Full history, not just what this browser session happened to generate
-    // — newest first (see ReportRepository.findByGeneratedByIdOrderByGeneratedAtDesc).
+    // list results
     @GetMapping
     public ResponseEntity<List<ReportResponse>> list(@AuthenticationPrincipal CustomUserDetails principal) {
         return ResponseEntity.ok(reportService.listForManager(principal.getUser().getId()));

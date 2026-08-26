@@ -49,7 +49,7 @@ public class DataSeeder implements CommandLineRunner {
 
     private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
     private static final String PASSWORD = "123456789";
-    private static final Random RANDOM = new Random(42); // fixed seed - reproducible seed data
+    private static final Random RANDOM = new Random(42); // fixed seed
 
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
@@ -60,8 +60,7 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${app.seed-data:true}")
     private boolean seedEnabled;
 
-    // region -> how many complaints to generate — spans every heatmap
-    // bucket (0-5 white, 6-10 green, 11-15 yellow, 16-20 orange, 21+ red).
+    // seed data values
     private static final List<Object[]> REGION_COUNTS = List.of(
             new Object[] { "Centre", 24 },
             new Object[] { "Littoral", 18 },
@@ -126,9 +125,7 @@ public class DataSeeder implements CommandLineRunner {
     }
 
     private List<Agent> seedAgents() {
-        // (region, serviceType) pairs — deliberately covers the regions
-        // carrying the most seeded complaints below, so the agent/manager
-        // dashboards have someone plausible to assign/claim work.
+        // sample data defs
         List<Object[]> defs = List.of(
                 new Object[] { "Centre", ServiceType.MOBILE },
                 new Object[] { "Centre", ServiceType.ADSL },
@@ -181,8 +178,7 @@ public class DataSeeder implements CommandLineRunner {
             List<String> towns = CameroonLocations.townsByRegion().get(region);
 
             for (int i = 0; i < count; i++) {
-                // ~10% of the time exercise the "Other" escape hatch instead
-                // of a real listed city, same as a real subscriber could pick.
+                // pick sample value
                 String city = RANDOM.nextInt(10) == 0
                         ? CameroonLocations.OTHER
                         : towns.get(RANDOM.nextInt(towns.size()));
@@ -217,14 +213,11 @@ public class DataSeeder implements CommandLineRunner {
                 complaint.setStatus(status);
                 complaint.setTicketNumber(ticketService.nextTicketNumber());
 
-                // Spread over the last 30 days so it falls inside
-                // ManagerHeatmap's default date range out of the box.
+                // set sample date
                 LocalDateTime createdAt = LocalDateTime.now().minusDays(RANDOM.nextInt(30)).minusHours(RANDOM.nextInt(24));
                 complaint.setCreatedAt(createdAt);
 
-                // Anything past SUBMITTED implies an agent claimed it —
-                // pick one whose assignedService matches, falling back to
-                // any agent if none match this complaint's service type.
+                // assign agent value
                 if (status != ComplaintStatus.SUBMITTED && !agents.isEmpty()) {
                     Agent agent = agents.stream()
                             .filter(a -> serviceType.name().equals(a.getAssignedService()))

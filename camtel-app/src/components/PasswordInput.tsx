@@ -10,10 +10,7 @@ interface PasswordInputProps {
   placeholder?: string;
 }
 
-// Drop-in replacement for a raw <input type="password">, used inside the
-// existing .field wrapper markup everywhere a password is collected (login,
-// register, internal login, user creation) — same field/label/error
-// structure around it, just a show/hide toggle added to the input itself.
+// password input field
 export function PasswordInput({ id, value, onChange, autoComplete, placeholder }: PasswordInputProps) {
   const { t } = useI18n();
   const [visible, setVisible] = useState(false);
